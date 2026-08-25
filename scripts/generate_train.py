@@ -100,7 +100,7 @@ def generate(rows: list[dict], model_id: str, workers: int) -> None:
                     print(f"    {n_done}/{len(todo)}", flush=True)
 
 
-def build(rows: list[dict], model_id: str, n_frozen: int) -> None:
+def build(rows: list[dict], model_id: str, n_frozen: int, n_deduped: int) -> None:
     """Filter the raw log into a training file and write the Phase 2 report.
 
     Filtering is repair, not selection against gold: schema-invalid outputs are dropped and invented
@@ -143,7 +143,7 @@ def build(rows: list[dict], model_id: str, n_frozen: int) -> None:
     pin, pout = price_for(model_id)
     spend = (tin * pin + tout * pout) / 1_000_000
 
-    _write_report(model_id, n_frozen, rows, logged, invalid, kept, stripped, emptied, quality,
+    _write_report(model_id, n_frozen, n_deduped, logged, invalid, kept, stripped, emptied, quality,
                   tin, tout, spend, out, val_out)
 
 
@@ -171,7 +171,7 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _write_report(model_id, n_frozen, rows, logged, invalid, kept, stripped, emptied, quality,
+def _write_report(model_id, n_frozen, n_deduped, logged, invalid, kept, stripped, emptied, quality,
                   tin, tout, spend, out, val_out) -> None:
     m = quality.micro
     weak = sorted(quality.per_label.items(), key=lambda kv: kv[1].f1)[:3]
@@ -188,7 +188,7 @@ def _write_report(model_id, n_frozen, rows, logged, invalid, kept, stripped, emp
 | stage | rows |
 |---|---|
 | frozen train split | {n_frozen:,} |
-| after template dedup | {len(rows):,} |
+| after template dedup | {n_deduped:,} |
 | teacher responses logged | {len(logged):,} |
 | − schema-invalid | −{len(invalid):,} |
 | − empty after stripping invented values | −{emptied:,} |
@@ -253,7 +253,7 @@ were not rebuilt.
 - The assistant turn is compact JSON with `ensure_ascii=False`, byte-identical to what the student must
   emit at serving time.
 - Near-duplicate handling: rows fingerprinted with their PII values masked out, so two rows sharing a
-  carrier sentence collapse. {n_frozen - len(rows)} dropped.
+  carrier sentence collapse. {n_frozen - n_deduped} dropped.
 - `val_sft.jsonl` comes from gold, so val loss in Phase 3 measures progress toward the true target.
 """
     (ROOT / "reports" / "phase2.md").write_text(report)
@@ -272,6 +272,7 @@ def main() -> None:
     rows = load_split("train")  # train only — test stays sealed until Phase 4
     n_frozen = len(rows)
     rows = dedupe(rows)
+    n_deduped = len(rows)
     if args.limit:
         rows = rows[: args.limit]
 
@@ -284,7 +285,7 @@ def main() -> None:
             return
         generate(rows, args.model, args.workers)
 
-    build(rows, args.model, n_frozen)
+    build(rows, args.model, n_frozen, n_deduped)
 
 
 if __name__ == "__main__":
