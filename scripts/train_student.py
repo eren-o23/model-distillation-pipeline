@@ -80,7 +80,7 @@ def build_dataset(tok, path: Path, limit: int | None = None):
     return Dataset.from_list(records)
 
 
-def run_eval(model, tok_gen, rows, system, tag: str, wandb_run=None, step=None) -> dict:
+def run_eval(model, tok_gen, rows, system, tag: str, wandb_run=None, step=None, batch_size=8) -> dict:
     """Generate, score against gold, log, and persist. Shared by baselines and per-epoch eval."""
     from src.pii.eval import as_dict, evaluate
 
@@ -91,7 +91,7 @@ def run_eval(model, tok_gen, rows, system, tag: str, wandb_run=None, step=None) 
     model.eval()
     try:
         t0 = time.time()
-        score, samples = evaluate(model, tok_gen, rows, system=system)
+        score, samples = evaluate(model, tok_gen, rows, system=system, batch_size=batch_size)
     finally:
         model.config.use_cache = was_cache
         model.train(was_training)
@@ -180,13 +180,23 @@ def main() -> None:
     name = f"r{args.rank}" + ("-smoke" if args.limit else "")
     out_dir = Path(args.out) / name
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+    # A killed Kaggle session that is later --resumed must land back in the SAME W&B run, or the loss
+    # curve arrives as two half-runs with no way to see the join. The id is derived from the config, so
+    # resuming is automatic and re-running a config deliberately overwrites rather than duplicating.
+    os.environ.setdefault("WANDB_RUN_ID", name)
+    os.environ.setdefault("WANDB_RESUME", "allow")
 
     tok_train = tokenizer()
     tok_train.padding_side = "right"  # training pads right; only generation needs left padding
     train_ds = build_dataset(tok_train, DATA_DIR / "train_sft.jsonl", args.limit)
 
     model, _ = load_model()
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    # The non-reentrant kwarg has to be passed here too, not only in TrainingArguments: this call enables
+    # checkpointing immediately with its own defaults, and the reentrant path cannot see LoRA params as
+    # requiring grad.
+    model = prepare_model_for_kbit_training(
+        model, use_gradient_checkpointing=True, gradient_checkpointing_kwargs={"use_reentrant": False}
+    )
     # alpha = 2*rank holds the alpha/r scaling constant across the two configs, so "rank 8 vs 32" varies
     # adapter capacity alone instead of confounding it with a 4x change in effective update size (D-020).
     model = get_peft_model(model, LoraConfig(
@@ -212,11 +222,18 @@ def main() -> None:
         def on_epoch_end(self, targs, state, control, model=None, **kw):
             import wandb
 
+            # Under torchrun every rank runs this callback. Without the guard the ranks would duplicate
+            # the generation work and race each other writing the same JSON file.
+            if not state.is_world_process_zero:
+                return
+
             epoch = round(state.epoch)
             adapter_dir = out_dir / f"epoch{epoch}"
             model.save_pretrained(adapter_dir)
+            # Half the eval batch of a standalone run: the training state is still resident here, and an
+            # OOM at epoch 1 would throw away the epoch that produced it.
             payload = run_eval(model, tok_gen, eval_rows, SHORT_SYSTEM, f"{name}-epoch{epoch}",
-                               wandb_run=wandb.run, step=state.global_step)
+                               wandb_run=wandb.run, step=state.global_step, batch_size=4)
             if payload["micro_f1"] > best["f1"]:
                 best.update(f1=payload["micro_f1"], epoch=epoch, dir=str(adapter_dir))
 
