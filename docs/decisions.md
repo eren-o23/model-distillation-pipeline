@@ -85,6 +85,13 @@ assumed, which is the reason `scripts/list_models.py` exists. Since the intended
 candidate set was rebuilt to span the price range rather than to find a single "best" model: the deliverable
 is an F1-per-dollar curve, which is the same unit-economics question the whole project asks.
 **Knock-on:** this invalidates the same-family design in D-005 — see D-011.
+**Verified, not assumed:** the legacy IDs were tested directly, not just checked against `models.list()`.
+`qwen2p5-72b`, `qwen2p5-72b-instruct`, `qwen2p5-7b-instruct` and `llama-v3p1-70b-instruct` all return
+`404 — "Model not found, inaccessible, and/or not deployed"`. Third-party pages still quoting $0.90/M for
+Qwen2.5-72B on Fireworks are stale. The models exist only as **on-demand dedicated deployments** at ~$7/hr
+per H100 (a 72B needs several), which was rejected on two grounds: it would consume a large share of the $50
+budget, and it would replace per-token accounting with GPU-hour accounting on the *rent* side of a
+rent-vs-own comparison, muddying the break-even analysis the project exists to produce.
 **Revisit if:** the catalogue changes again. It already did once, so re-run `list_models.py` before Phase 2.
 
 ---
@@ -133,9 +140,19 @@ Three outcomes are possible and only the measurement distinguishes them:
 Deferring costs nothing: the student only matters from Phase 3, and the bake-off runs first regardless.
 **Revisit if:** resolved by the bake-off — this entry gets a decisive outcome appended.
 
-**Resolved (student half):** the student is **Qwen3-8B**. It matches the generation of `qwen3p7-plus`, so if
-that model wins the teacher comparison the same-family design of D-005 is restored cleanly; QLoRA on a 16GB
-T4 is confirmed feasible. `Qwen2.5-7B` was dropped — it is now older than every available teacher, so it
+**Resolved (student half):** the student is **Qwen3-8B**; QLoRA on a 16GB T4 is confirmed feasible.
+
+**Correction (same day):** an earlier version of this entry claimed Qwen3-8B "matches the generation of
+`qwen3p7-plus`" and so restored the same-family design. That was wrong. **Qwen3.7 was never released as open
+weights — the generation was skipped**, so the teacher has no open sibling at any size and a true
+same-generation pair is impossible, not merely inconvenient. Qwen3-8B is the original Qwen3 release, several
+generations behind the teacher. The nearest open models are `Qwen3.5-9B` and `Qwen3.5-4B`, still a generation
+short.
+**Consequence:** the "isolates scale" argument from D-005 is **abandoned, not quietly preserved**. Teacher and
+student are related in lineage but not in generation, and the writeup must say so. The student was therefore
+chosen on practical grounds — documented QLoRA path on a T4, VRAM headroom, and the spec's 8B framing —
+rather than on family aesthetics. `Qwen3.5-4B` remains the fallback if 8B proves impractical, and would
+additionally improve the break-even number. `Qwen2.5-7B` was dropped — it is now older than every available teacher, so it
 gained nothing over Qwen3-8B. `Qwen3-4B` was considered and rejected for now: it would improve serving cost
 and halve training time on the Kaggle quota, but the spec's headline claim is an 8B student and a weaker
 student risks understating the quality number. It stays the fallback if 8B proves impractical on a T4.
