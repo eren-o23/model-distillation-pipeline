@@ -92,10 +92,12 @@ def load_key() -> str:
     return key
 
 
-def client():
+def client(timeout: float = 120.0, max_retries: int = 2):
+    """Explicit timeout: the SDK default is long enough that a laptop sleeping mid-run leaves worker
+    threads blocked on half-open sockets for many minutes before anything errors."""
     from openai import OpenAI
 
-    return OpenAI(base_url=BASE_URL, api_key=load_key())
+    return OpenAI(base_url=BASE_URL, api_key=load_key(), timeout=timeout, max_retries=max_retries)
 
 
 def _parse(text: str) -> list[dict[str, str]] | None:

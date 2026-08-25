@@ -7,6 +7,7 @@ Picks the teacher on evidence rather than on model size. Spending requires an ex
 """
 
 import argparse
+import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -28,15 +29,36 @@ def estimate_cost(rows: list[dict], model_id: str) -> float:
     return (prompt_tokens * pin + 120 * len(rows) * pout) / 1_000_000
 
 
-def run_model(cli, model_id: str, rows: list[dict], workers: int) -> tuple[Score, Usage]:
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        results = list(pool.map(lambda r: extract(cli, model_id, r["source_text"]), rows))
+def cache_path(model_id: str, n: int) -> Path:
+    return REPORTS / "raw" / f"{model_id.split('/')[-1]}-{n}.json"
 
-    score, total = Score(), Usage()
-    for row, (entities, usage) in zip(rows, results, strict=True):
+
+def run_model(cli, model_id: str, rows: list[dict], workers: int) -> tuple[Score, Usage]:
+    """Run one model and checkpoint its raw predictions before returning.
+
+    Checkpointing matters because each model costs real money: without it, a crash on the last model
+    throws away every model that already succeeded, and re-running double-spends.
+    """
+    cached = cache_path(model_id, len(rows))
+    if cached.exists():
+        print(f"  reusing checkpoint {cached.name} (no new spend)", flush=True)
+        blob = json.loads(cached.read_text())
+        preds, total = blob["predictions"], Usage(**blob["usage"])
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            results = list(pool.map(lambda r: extract(cli, model_id, r["source_text"]), rows))
+        preds = [entities for entities, _ in results]
+        total = Usage()
+        for _, usage in results:
+            total.prompt_tokens += usage.prompt_tokens
+            total.completion_tokens += usage.completion_tokens
+        cached.parent.mkdir(parents=True, exist_ok=True)
+        cached.write_text(json.dumps({"predictions": preds, "usage": vars(total)}))
+        print(f"  checkpointed -> {cached.name}", flush=True)
+
+    score = Score()
+    for row, entities in zip(rows, preds, strict=True):
         score.add(row["entities"], entities, row["source_text"])
-        total.prompt_tokens += usage.prompt_tokens
-        total.completion_tokens += usage.completion_tokens
     return score, total
 
 
@@ -64,12 +86,20 @@ def main() -> None:
     cli = client()
     results = {}
     for model_id in models:
-        print(f"\nrunning {model_id} …")
-        score, usage = run_model(cli, model_id, rows, args.workers)
+        print(f"\nrunning {model_id} …", flush=True)
+        try:
+            score, usage = run_model(cli, model_id, rows, args.workers)
+        except Exception as exc:  # noqa: BLE001 - one bad model must not void the others' spend
+            print(f"  FAILED: {type(exc).__name__}: {str(exc)[:160]}", flush=True)
+            continue
         cost = usage.cost(model_id)
         results[model_id] = (score, usage, cost)
-        print(score.table())
-        print(f"  cost: ${cost:.4f}  ({usage.prompt_tokens} in / {usage.completion_tokens} out)")
+        print(score.table(), flush=True)
+        print(f"  cost: ${cost:.4f}  ({usage.prompt_tokens} in / {usage.completion_tokens} out)", flush=True)
+
+    if not results:
+        print("\nNo model produced results.")
+        return
 
     REPORTS.mkdir(exist_ok=True)
     lines = [
