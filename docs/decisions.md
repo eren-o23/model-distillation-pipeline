@@ -73,6 +73,36 @@ raise the ceiling and is cheap (~$1).
 
 ---
 
+## D-009 · Teacher candidates re-picked from the live Fireworks catalogue
+
+**Date:** 2026-08-25
+**Chose:** Bake off six candidates spanning a 20x price range — `qwen3p7-plus`, `deepseek-v4-pro`, `glm-5p2`,
+`gpt-oss-120b`, `minimax-m3`, `qwen3p8-2p4t-a95b`.
+**Over:** the planned `Qwen2.5-72B-Instruct` vs `Qwen3-235B` comparison.
+**Why:** `Qwen2.5-72B` is **no longer served on Fireworks serverless** — nor is any Llama model or
+`Qwen3-235B`. This was caught by querying the live catalogue instead of hardcoding the model IDs the plan
+assumed, which is the reason `scripts/list_models.py` exists. Since the intended teacher no longer exists, the
+candidate set was rebuilt to span the price range rather than to find a single "best" model: the deliverable
+is an F1-per-dollar curve, which is the same unit-economics question the whole project asks.
+**Knock-on:** this invalidates the same-family design in D-005 — see D-011.
+**Revisit if:** the catalogue changes again. It already did once, so re-run `list_models.py` before Phase 2.
+
+---
+
+## D-010 · Pricing table corrected — the flat-rate assumption was wrong
+
+**Date:** 2026-08-25
+**Chose:** A per-model pricing table read from Fireworks' docs, with the flat >16B rate only as a fallback.
+**Over:** the earlier assumption that every model above 16B params bills at a flat $0.90/M both ways.
+**Why:** The flat rate applies only to models Fireworks does not price individually. The named models vary by
+more than 20x: `gpt-oss-120b` at $0.15/$0.60 against `kimi-k3` at $3.00/$15.00, with the intended workhorse
+`qwen3p7-plus` at $0.40/$1.60 — cheaper than the assumed flat rate, while `deepseek-v4-pro` ($1.74/$3.48) is
+nearly 4x it on output. Cost estimates built on the flat assumption would have been wrong in both directions,
+and cost accuracy is the point of this project.
+**Revisit if:** before every spending run — rates move, and the table records the date it was checked.
+
+---
+
 ## D-005 · Student = Qwen2.5-7B-Instruct, same family as the teacher
 
 **Date:** 2026-08-25
@@ -85,6 +115,23 @@ handles multilingual text better, which keeps the door open to the dataset's oth
 goal.
 **Revisit if:** Qwen2.5-7B proves unstable under QLoRA on the available hardware; Llama-3.1-8B is the fallback
 and the family-symmetry argument is then dropped from the writeup rather than quietly kept.
+**Status: superseded in part — see D-011.**
+
+---
+
+## D-011 · Same-family design deferred pending bake-off results
+
+**Date:** 2026-08-25
+**Chose:** Defer the student decision until the teacher bake-off reports.
+**Why:** D-005's argument depended on a Qwen2.5 teacher, and Qwen2.5-72B is gone from the catalogue (D-009).
+Three outcomes are possible and only the measurement distinguishes them:
+1. `qwen3p7-plus` is competitive → switch the student to **Qwen3-8B**, restoring family symmetry cleanly at
+   the same generation as the teacher.
+2. A non-Qwen teacher wins decisively → take the higher ceiling and **state plainly that teacher and student
+   are unrelated families**, dropping the "isolates scale" claim rather than quietly keeping it.
+3. The field is close → prefer the Qwen teacher as a tiebreak and keep the cleaner experimental story.
+Deferring costs nothing: the student only matters from Phase 3, and the bake-off runs first regardless.
+**Revisit if:** resolved by the bake-off — this entry gets a decisive outcome appended.
 
 ---
 

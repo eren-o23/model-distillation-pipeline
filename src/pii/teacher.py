@@ -17,13 +17,28 @@ from src.pii.data import LABELS
 BASE_URL = "https://api.fireworks.ai/inference/v1"
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
-# $ per 1M tokens (input, output). Fireworks bills a flat rate for every model above 16B params;
-# the reasoning-tier models are priced separately. Batch inference is half these rates.
-PRICING = {"default": (0.90, 0.90), "qwen3p8": (2.00, 6.00)}
+# $ per 1M tokens (input, output), from docs.fireworks.ai/serverless/pricing (checked 2026-08-25).
+# Models Fireworks doesn't price individually fall back to the flat >16B-param rate of $0.90 both ways.
+# Batch inference is half these rates. Rates move — re-check before trusting a cost estimate.
+PRICING = {
+    "deepseek-v4-pro": (1.74, 3.48),
+    "deepseek-v4-flash": (0.22, 0.66),
+    "glm-5p2": (1.40, 4.40),
+    "kimi-k3": (3.00, 15.00),
+    "kimi-k2p6": (0.95, 4.00),
+    "minimax-m3": (0.30, 1.20),
+    "qwen3p7-plus": (0.40, 1.60),
+    "qwen3p8": (2.00, 6.00),
+    "gpt-oss-120b": (0.15, 0.60),
+    "gpt-oss-20b": (0.07, 0.30),
+}
+FLAT_RATE = (0.90, 0.90)
 
 
 def price_for(model_id: str) -> tuple[float, float]:
-    return next((v for k, v in PRICING.items() if k in model_id.lower()), PRICING["default"])
+    """Longest-match wins, so 'kimi-k2p6' isn't shadowed by a shorter key."""
+    matches = [(k, v) for k, v in PRICING.items() if k in model_id.lower()]
+    return max(matches, key=lambda kv: len(kv[0]))[1] if matches else FLAT_RATE
 
 
 class Entity(BaseModel):
