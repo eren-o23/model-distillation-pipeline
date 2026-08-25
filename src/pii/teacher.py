@@ -58,11 +58,17 @@ Return every PII span you find, using ONLY these labels:
 {", ".join(sorted(LABELS))}
 
 Rules:
-- Copy each value EXACTLY as it appears in the text. Never paraphrase, reformat, or correct it.
+- Copy each value EXACTLY as it appears in the text, character for character. Never paraphrase, reformat,
+  normalise, shorten or correct it. If a date is written "2016-11-25T00:00:00", return the whole string
+  including the time part — do not trim it to "2016-11-25".
 - Report each occurrence separately. If the same value appears twice, return it twice.
-- Use GIVENNAME for first/given names and SURNAME for family names, as separate entities.
-- DATE covers dates of birth and any other calendar date. Do not include times.
-- STREET is the street name and CITY the city; keep them as separate entities.
+- GIVENNAME covers ALL of a person's given/first/middle names as a SINGLE entity. For "Dacian Cosmin Ionescu"
+  return GIVENNAME "Dacian Cosmin" and SURNAME "Ionescu" — never split the given names into two entities.
+- SURNAME is the family name only.
+- STREET is the street name WITHOUT the building or house number. For "1222 Chanditala Road" the STREET is
+  "Chanditala Road". Never include the leading number.
+- CITY is the city name alone, kept separate from STREET.
+- DATE covers dates of birth and any other calendar date.
 - If the text contains no PII, return an empty list.
 - Return ONLY JSON matching: {{"entities": [{{"label": "...", "value": "..."}}]}}"""
 
@@ -125,16 +131,28 @@ def extract(cli, model_id: str, source_text: str, retries: int = 1) -> tuple[lis
         "model": model_id,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": source_text}],
         "temperature": 0,
-        "max_tokens": 2048,
+        # Headroom: the answer is ~300 tokens, but a model that ignores reasoning_effort needs room to
+        # finish rather than truncating mid-JSON and being scored as a detection failure.
+        "max_tokens": 4096,
         "response_format": {"type": "json_object", "schema": SCHEMA},
+        # PII extraction is a bounded lookup, not a reasoning problem. Left on, qwen3p7-plus spends ~1,900
+        # of its ~2,459 output tokens thinking — billed as output, ~8.7x the cost, and enough to overrun a
+        # 2048 cap and truncate the answer. 'none' cuts output to ~282 tokens. ('low' makes it worse, not
+        # better.) Ignored by models that don't support it.
+        "reasoning_effort": "none",
     }
 
     for attempt in range(retries + 1):
         try:
             resp = cli.chat.completions.create(**kwargs)
         except Exception as exc:  # noqa: BLE001 - one retry, then record as invalid
+            # Models that don't know reasoning_effort reject the whole request; drop it and retry once
+            # rather than failing every call against that model.
+            if "reasoning_effort" in str(exc) and "reasoning_effort" in kwargs:
+                kwargs.pop("reasoning_effort")
+                continue
             if attempt == retries:
-                print(f"    api error: {type(exc).__name__}: {str(exc)[:120]}")
+                print(f"    api error: {type(exc).__name__}: {str(exc)[:120]}", flush=True)
                 return None, usage
             continue
 

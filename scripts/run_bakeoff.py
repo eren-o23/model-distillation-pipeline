@@ -22,11 +22,16 @@ from src.pii.teacher import SYSTEM, Usage, client, extract, price_for  # noqa: E
 REPORTS = Path(__file__).resolve().parents[1] / "reports"
 
 
-def estimate_cost(rows: list[dict], model_id: str) -> float:
-    """Rough pre-flight estimate: ~4 chars per token in, ~120 tokens out per example."""
+def estimate_cost(rows: list[dict], model_id: str, out_tokens: int = 350) -> float:
+    """Rough pre-flight estimate: ~4 chars per token in, ~350 tokens out per example.
+
+    350, not 120: measured output for this task is ~282 tokens with reasoning off. The estimate is only
+    a floor — a model that ignores reasoning_effort and thinks anyway ran 2,459 tokens, ~9x this. Treat
+    a large overshoot against the reported cost as a signal that reasoning is still on.
+    """
     pin, pout = price_for(model_id)
     prompt_tokens = sum(len(SYSTEM) + len(r["source_text"]) for r in rows) / 4
-    return (prompt_tokens * pin + 120 * len(rows) * pout) / 1_000_000
+    return (prompt_tokens * pin + out_tokens * len(rows) * pout) / 1_000_000
 
 
 def cache_path(model_id: str, n: int) -> Path:
