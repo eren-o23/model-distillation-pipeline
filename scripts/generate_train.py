@@ -209,16 +209,17 @@ def _write_report(model_id, n_frozen, n_deduped, logged, failed, invalid, kept, 
 | − empty after stripping invented values | −{emptied:,} |
 | **written to `train_sft.jsonl`** | **{len(kept):,}** |
 
-Schema-invalid rate: **{len(invalid) / max(len(logged) - len(failed), 1):.2%}**
-({len(invalid)}/{len(logged) - len(failed)} responses that actually reached the model), against 0% observed
-on the 200-example ceiling run.
+Schema-invalid rate: **{len(invalid) / max(len(logged) - len(failed), 1):.2%}** ({len(invalid)} of
+{len(logged) - len(failed):,} responses that actually reached the model), against 0% on the 200-example
+ceiling run. Invented entity values stripped: **{stripped:,}** — individual entities removed from otherwise
+usable examples, rather than whole rows discarded. The {emptied:,} dropped rows are ones where the teacher
+returned nothing at all; an empty target would teach the student to find nothing.
 
 **API failures are counted separately on purpose.** A 429 or a timeout is a transport failure that never
 reached the model and was never billed, so folding it into the schema-invalid rate would report a teacher
-quality problem that did not occur. The first pass at 16 workers hit 684 of these; they were re-fetched at
-lower concurrency, and the line above shows what, if anything, never came back.
-Invented entity values stripped: **{stripped:,}** — individual entities removed from otherwise usable
-examples, rather than whole rows discarded.
+quality problem that did not occur. The first pass at 16 workers hit **684** of these — 8.6% of the run,
+which would have been published as a teacher defect. Re-fetching them at 8 workers recovered all 684 with
+zero errors, confirming the cause was local concurrency rather than anything about the model.
 
 ## Training-label quality
 
