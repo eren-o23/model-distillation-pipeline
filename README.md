@@ -4,7 +4,7 @@ Distilling a PII-detection capability from a large open-weight teacher into a 7B
 the two on quality, cost, and latency to find the **break-even request volume** — the traffic level above
 which self-hosting the student beats paying per-token for the teacher.
 
-**Status:** Phase 1 of 5 — task locked, teacher ceiling in progress.
+**Status:** Phase 2 of 5 complete — teacher ceiling established, training set generated. Fine-tuning next.
 
 ---
 
@@ -28,7 +28,8 @@ Teacher and student are from the same model family on purpose: the comparison th
 
 ## Results
 
-**Phase 1 complete.** Teacher ceiling established; student benchmark and break-even volume land here next.
+**Phases 1–2 complete.** Teacher ceiling established and the training set generated; student benchmark and
+break-even volume land here next.
 
 | | |
 |---|---|
@@ -45,6 +46,29 @@ Strongest labels are `EMAIL` (1.000), `DATE` (0.983) and `TELEPHONENUM` (0.944).
 `GIVENNAME`/`SURNAME` (~0.68), where the dataset's own given/family-name boundary is genuinely ambiguous on
 multicultural names, and by `IDCARDNUM` (0.377) — see the decision log for why that one resisted fixing.
 
+### Training set ([reports/phase2.md](reports/phase2.md))
+
+| | |
+|---|---|
+| **Training examples** | **7,842** |
+| Label quality vs. train gold | **0.832 micro-F1** |
+| schema-invalid | 0.00% |
+| invented values stripped | 18 entities |
+
+The training labels scoring 0.832 against train gold — matching the 0.832 val ceiling almost exactly — is a
+useful consistency check: the teacher performs the same on both splits, so the reservoir-sampled splits are
+drawing from one distribution rather than two.
+
+Teacher outputs are **repaired, not filtered against gold**: unparseable outputs and invented values are
+dropped, but examples the teacher merely got wrong are kept. Filtering by gold agreement would train the
+student only on what the teacher found easy, and a real deployment generating data from a frontier model has
+no gold to filter with. The report costs that option out anyway — at a 0.7 agreement threshold, 76% of rows
+survive at 0.909 label quality — so Phase 3 can take it if the student underperforms.
+
+The student trains on a **~60-token prompt** rather than the teacher's ~475-token one: the annotation
+conventions live in the weights, not the context. That cuts input tokens per request roughly 4x, which feeds
+the break-even number directly (D-017).
+
 ## Cost
 
 Every API call in this project is metered and reported — cost transparency is part of what is being
@@ -54,8 +78,14 @@ demonstrated, and the break-even number is meaningless without it.
 |---|---|
 | Phase 1 — teacher bake-off and ceiling | ~$1.50 |
 | — of which wasted on an invalidated run | ~$1.00 |
-| **Total to date** | **~$1.50** |
-| Phase 2 projection — 8,000 examples (batch) | $1.88 |
+| Phase 2 — 7,992 examples generated | **$3.52** |
+| — projected beforehand | $3.77 |
+| — batch API alternative, declined | $1.76 |
+| **Total to date** | **~$5.02** |
+
+Phase 2 ran synchronously rather than through the batch API, paying $1.76 more to keep an expensive run
+interactive and resumable (D-016). The declined saving is reported rather than omitted — a cost analysis that
+only shows the cheapest path you *could* have taken is not a cost analysis either.
 
 Roughly $1 of that was spent measuring truncation instead of capability, before the reasoning-token bug was
 found. It is reported rather than quietly dropped, because a cost analysis that only counts the runs that
@@ -78,10 +108,10 @@ Budget ceiling: **$50** in Fireworks credits. Fine-tuning runs on Kaggle's free 
 
 ```
 docs/decisions.md      decision log — what was chosen, over what, and why
-src/pii/               data prep, metric, teacher client
-scripts/               split construction, teacher bake-off
-reports/               bake-off results, ceiling report
-tests/                 metric tests
+src/pii/               data prep, metric, teacher client, student prompt format
+scripts/               split construction, teacher bake-off, training-set generation
+reports/               bake-off results, ceiling report, Phase 2 report + raw per-row logs
+tests/                 metric and training-set tests
 ```
 
 ## Setup
@@ -89,7 +119,9 @@ tests/                 metric tests
 ```bash
 pip install -r requirements.txt
 echo "FIREWORKS_API_KEY=..." > .env   # gitignored
-python scripts/build_splits.py
+python scripts/build_splits.py                    # ~10 min, one full pass over 1.6M rows
+python scripts/generate_train.py                  # dry run: prints the cost estimate, spends nothing
+python scripts/generate_train.py --yes            # the real generation run
 ```
 
 ## Design decisions
