@@ -21,10 +21,16 @@ SHORT_SYSTEM = (
 )
 
 
-def chat_messages(source_text: str) -> list[dict[str, str]]:
-    """The prompt half of a training example, and the whole request at serving time."""
+def chat_messages(source_text: str, system: str = SHORT_SYSTEM) -> list[dict[str, str]]:
+    """The prompt half of a training example, and the whole request at serving time.
+
+    `system` is overridable for exactly one caller: the Phase 3 baseline that measures an *untuned*
+    Qwen3-8B given the teacher's full ~475-token conventions, which is what makes "how much did
+    fine-tuning buy over just prompting?" answerable. Training and serving both take the default, and
+    that is the pairing D-017's token saving is claimed against.
+    """
     return [
-        {"role": "system", "content": SHORT_SYSTEM},
+        {"role": "system", "content": system},
         {"role": "user", "content": source_text},
     ]
 
@@ -36,7 +42,7 @@ def to_sft_example(source_text: str, entities: list[dict[str, str]]) -> dict:
     return {"messages": chat_messages(source_text) + [{"role": "assistant", "content": answer}]}
 
 
-def render_prompt(tokenizer, source_text: str) -> str:
+def render_prompt(tokenizer, source_text: str, system: str = SHORT_SYSTEM) -> str:
     """The exact string fed to the model at inference — and the exact prefix it was trained on.
 
     `enable_thinking=False` is load-bearing, and its effect is the opposite of what the name suggests.
@@ -53,7 +59,7 @@ def render_prompt(tokenizer, source_text: str) -> str:
     apply_chat_template themselves. The identity is asserted in tests/test_prompt_render.py.
     """
     return tokenizer.apply_chat_template(
-        chat_messages(source_text),
+        chat_messages(source_text, system),
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,
