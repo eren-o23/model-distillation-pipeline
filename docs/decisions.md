@@ -142,6 +142,50 @@ student risks understating the quality number. It stays the fallback if 8B prove
 
 ---
 
+## D-013 · Reasoning is switched OFF for the teacher
+
+**Date:** 2026-08-25
+**Chose:** `reasoning_effort: "none"` on every teacher call, with a fallback that strips the parameter for
+models that reject it.
+**Over:** leaving reasoning at its default, or lowering it to `"low"`.
+**Why:** The first bake-off returned micro-F1 0.548 with recall 0.436, which looked like a weak teacher. It
+was not. `qwen3p7-plus` is a reasoning model: a single probe showed 389 input tokens producing **2,459 output
+tokens, of which ~1,900 were thinking** and only ~200 the actual answer. That overran the 2,048 `max_tokens`
+cap, truncating the JSON mid-answer, so **33.5% of outputs were unparseable** and every one of those scored
+as a total miss. The metric was measuring truncation, not capability. Setting `reasoning_effort: "none"` cuts
+output to ~145 tokens — a **17x reduction** — and removes the truncation entirely. `"low"` makes it *worse*
+(2,896 tokens), so it is not a middle ground.
+**Wider finding, and the one worth putting in the README:** thinking tokens are billed as output, so a
+reasoning model is a poor economic fit for bounded extraction — a nominally cheap $0.40/$1.60 model
+effectively costs ~9x its sticker rate. This cuts against the API teacher and *for* a non-reasoning
+fine-tuned student, which strengthens the break-even case on measured evidence rather than assertion.
+**Revisit if:** a task in a later phase genuinely benefits from deliberation. PII extraction does not — it is
+a bounded lookup.
+
+---
+
+## D-014 · Three annotation conventions encoded in the teacher prompt
+
+**Date:** 2026-08-25
+**Chose:** State the dataset's span conventions explicitly in the system prompt.
+**Over:** accepting the low per-label scores as the teacher's real ceiling.
+**Why:** After the truncation fix, three labels still scored oddly — `STREET` worst at 0.129 F1. Diffing
+predictions against gold (rather than trusting the aggregate) showed all three were **annotation-convention
+mismatches, not detection failures**:
+- `STREET`: gold excludes the building number — `"1222 Chanditala Road"` is `BUILDINGNUM` + `"Chanditala
+  Road"`. Since `BUILDINGNUM` is out of scope (D-006) the model had nowhere to put the number and folded it
+  into the street.
+- `GIVENNAME`: gold is a **single span for all given names** (`"Dacian Cosmin"`), while the model emitted one
+  entity per name.
+- `DATE`: gold keeps the full timestamp (`"2016-11-25T00:00:00"`); the model normalised it to `"2016-11-25"`.
+All three now verified fixed on sample examples.
+**Why this matters beyond the fix:** the headline F1 was hiding three distinct bugs, none of them about the
+model's ability to *find* PII. Any teacher ceiling measured before this would have been understated, and the
+student would then have been flattered by comparison against it.
+**Revisit if:** the label set changes — conventions are dataset-specific and would need re-deriving.
+
+---
+
 ## D-012 · Teacher price is a framing choice, not just a cost
 
 **Date:** 2026-08-25
