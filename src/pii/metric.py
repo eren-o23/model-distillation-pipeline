@@ -21,6 +21,21 @@ def _key(entities: list[Entity]) -> Counter:
     return Counter((e["label"], normalise(e["value"])) for e in entities)
 
 
+def is_hallucinated(entity: Entity, source_text: str) -> bool:
+    """True if the value does not actually occur in the input.
+
+    Scoring counts these; Phase 2 generation strips them from the training set. Same predicate either
+    way, defined once: a value absent from the text can never be a correct extraction, so teaching it
+    would teach the student to invent.
+    """
+    return normalise(entity["value"]) not in normalise(source_text)
+
+
+def strip_hallucinated(entities: list[Entity], source_text: str) -> list[Entity]:
+    """Drop only the invented entities, keeping the rest of the example's labels."""
+    return [e for e in entities if not is_hallucinated(e, source_text)]
+
+
 @dataclass
 class LabelScore:
     tp: int = 0
@@ -59,9 +74,7 @@ class Score:
             pred = []  # unparseable output detects nothing; every gold entity is a miss
 
         if source_text:
-            self.hallucinated += sum(
-                1 for e in pred if normalise(e["value"]) not in normalise(source_text)
-            )
+            self.hallucinated += sum(1 for e in pred if is_hallucinated(e, source_text))
 
         g, p = _key(gold), _key(pred)
         for label in {lbl for lbl, _ in g | p}:
