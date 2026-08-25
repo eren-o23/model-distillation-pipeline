@@ -58,9 +58,21 @@ def estimate(n: int, model_id: str) -> float:
 
 
 def read_log() -> dict[str, dict]:
+    """Last line wins, so a retry appended for a uid supersedes its earlier failure."""
     if not RAW_LOG.exists():
         return {}
     return {r["uid"]: r for r in (json.loads(line) for line in RAW_LOG.open())}
+
+
+def is_api_failure(record: dict) -> bool:
+    """A null result with nothing billed never reached the model — a 429 or a timeout, not a bad answer.
+
+    The distinction is load-bearing twice over. These rows are retryable and free to retry, so the run
+    should re-fetch them rather than silently dropping them from the training set. And counting them as
+    schema-invalid would report a teacher quality failure that did not happen: the first full run logged
+    684 of these, which would have read as an 8.6% schema-invalid rate against the 0% actually measured.
+    """
+    return record["entities"] is None and record["in"] == 0
 
 
 def generate(rows: list[dict], model_id: str, workers: int) -> None:
@@ -70,8 +82,9 @@ def generate(rows: list[dict], model_id: str, workers: int) -> None:
     the bake-off's write-once checkpointing would throw all of it away on a crash at minute 39.
     """
     done = read_log()
-    todo = [r for r in rows if r["uid"] not in done]
-    print(f"  {len(done)} already logged, {len(todo)} to fetch")
+    todo = [r for r in rows if r["uid"] not in done or is_api_failure(done[r["uid"]])]
+    retries = sum(1 for r in todo if r["uid"] in done)
+    print(f"  {len(done)} already logged, {len(todo)} to fetch ({retries} retrying after API failure)")
     if not todo:
         return
 
@@ -110,7 +123,8 @@ def build(rows: list[dict], model_id: str, n_frozen: int, n_deduped: int) -> Non
     log = read_log()
     logged = [r for r in rows if r["uid"] in log]
 
-    invalid = [r for r in logged if log[r["uid"]]["entities"] is None]
+    failed = [r for r in logged if is_api_failure(log[r["uid"]])]
+    invalid = [r for r in logged if log[r["uid"]]["entities"] is None and not is_api_failure(log[r["uid"]])]
     kept, stripped, emptied = [], 0, 0
     for row in logged:
         ents = log[row["uid"]]["entities"]
@@ -143,8 +157,8 @@ def build(rows: list[dict], model_id: str, n_frozen: int, n_deduped: int) -> Non
     pin, pout = price_for(model_id)
     spend = (tin * pin + tout * pout) / 1_000_000
 
-    _write_report(model_id, n_frozen, n_deduped, logged, invalid, kept, stripped, emptied, quality,
-                  tin, tout, spend, out, val_out)
+    _write_report(model_id, n_frozen, n_deduped, logged, failed, invalid, kept, stripped, emptied,
+                  quality, tin, tout, spend, out, val_out)
 
 
 def _per_example_f1(gold: list[dict], pred: list[dict]) -> float:
@@ -171,8 +185,8 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _write_report(model_id, n_frozen, n_deduped, logged, invalid, kept, stripped, emptied, quality,
-                  tin, tout, spend, out, val_out) -> None:
+def _write_report(model_id, n_frozen, n_deduped, logged, failed, invalid, kept, stripped, emptied,
+                  quality, tin, tout, spend, out, val_out) -> None:
     m = quality.micro
     weak = sorted(quality.per_label.items(), key=lambda kv: kv[1].f1)[:3]
     projected = estimate(len(logged), model_id)
@@ -190,12 +204,19 @@ def _write_report(model_id, n_frozen, n_deduped, logged, invalid, kept, stripped
 | frozen train split | {n_frozen:,} |
 | after template dedup | {n_deduped:,} |
 | teacher responses logged | {len(logged):,} |
+| − unrecovered API failures (429/timeout, nothing billed) | −{len(failed):,} |
 | − schema-invalid | −{len(invalid):,} |
 | − empty after stripping invented values | −{emptied:,} |
 | **written to `train_sft.jsonl`** | **{len(kept):,}** |
 
-Schema-invalid rate: **{len(invalid) / max(len(logged), 1):.2%}** ({len(invalid)}/{len(logged)}), against 0%
-observed on the 200-example ceiling run.
+Schema-invalid rate: **{len(invalid) / max(len(logged) - len(failed), 1):.2%}**
+({len(invalid)}/{len(logged) - len(failed)} responses that actually reached the model), against 0% observed
+on the 200-example ceiling run.
+
+**API failures are counted separately on purpose.** A 429 or a timeout is a transport failure that never
+reached the model and was never billed, so folding it into the schema-invalid rate would report a teacher
+quality problem that did not occur. The first pass at 16 workers hit 684 of these; they were re-fetched at
+lower concurrency, and the line above shows what, if anything, never came back.
 Invented entity values stripped: **{stripped:,}** — individual entities removed from otherwise usable
 examples, rather than whole rows discarded.
 
@@ -264,7 +285,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=TEACHER)
     ap.add_argument("--limit", type=int, help="cap rows, for smoke tests")
-    ap.add_argument("--workers", type=int, default=16)
+    # 16 workers hit sustained 429s on Fireworks serverless; 8 is what the Phase 1 bake-off used without
+    # trouble. The run is throughput-bound on the rate limit, not on local concurrency.
+    ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--yes", action="store_true", help="required to actually spend credits")
     ap.add_argument("--build-only", action="store_true", help="rebuild outputs from the log, no spend")
     args = ap.parse_args()
@@ -277,7 +300,9 @@ def main() -> None:
         rows = rows[: args.limit]
 
     if not args.build_only:
-        pending = len([r for r in rows if r["uid"] not in read_log()])
+        # Read the log once, not once per row: at 8k rows against an 8k-line log that is 64M line-parses.
+        log = read_log()
+        pending = len([r for r in rows if r["uid"] not in log or is_api_failure(log[r["uid"]])])
         print(f"\n{len(rows):,} rows ({n_frozen:,} frozen, {pending:,} still to fetch)")
         print(f"  estimated spend: ~${estimate(pending, args.model):.2f}")
         if not args.yes:
