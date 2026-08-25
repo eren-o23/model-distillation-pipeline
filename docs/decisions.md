@@ -97,8 +97,43 @@ and the family-symmetry argument is then dropped from the writeup rather than qu
 learn or to score reliably, so their noisy per-label F1 would drag the headline number down for reasons that
 have nothing to do with distillation quality. Selecting by measured frequency rather than by intuition avoids
 baking in a guess about which classes matter.
-**Open question at time of writing:** `SEX` and `GENDER` both appear in the label set and may be
-near-duplicates. To be inspected during split construction and either merged or the rarer one dropped, with
-the reason recorded here as D-008.
-**Revisit if:** the student saturates the 12-class task, in which case widening to all 19 is a natural
+**Measured, then chosen.** Label frequency over a 60k-row sample of the English subset showed a sharp cliff:
+20 classes appear regularly (TIME, the rarest, at 745), then a tail of 9 classes with fewer than 10
+occurrences each (`URL`, `SALARY`, `ACCOUNTNUM`, …) that leak in from other source datasets. Within the
+learnable 20, a strict top-12-by-frequency cut would have kept `TITLE` ("Mr", "Master", 3766) and `AGE`
+(2615) while dropping `CREDITCARDNUMBER` (1868), `TAXNUM` (1515) and `SOCIALNUM` (1176) — i.e. a redactor
+that masks honorifics but leaves card numbers and national insurance numbers in the clear. Frequency was
+therefore used as a *floor* (everything kept has >1,100 occurrences, so all 12 are learnable) and redaction
+value as the *selector*.
+**Final set:** GIVENNAME, SURNAME, DATE, EMAIL, CITY, TELEPHONENUM, STREET, ZIPCODE, IDCARDNUM,
+CREDITCARDNUMBER, TAXNUM, SOCIALNUM.
+**Revisit if:** the student saturates the 12-class task, in which case widening to all 20 is a natural
 stretch goal.
+
+---
+
+## D-007 · Reservoir-sample the splits instead of taking the first N rows
+
+**Date:** 2026-08-25
+**Chose:** A single full pass over each source split with reservoir sampling.
+**Over:** Pooling the first ~24k eligible rows and shuffling (the original approach), which is much faster.
+**Why:** A bug caught by inspecting the manifest rather than trusting it. The source `train.jsonl` is ordered
+by `source_dataset`, and the **first ~150,000 rows are 100% Singapore-region**; CA/GB/US/IN only begin
+appearing after that, evenly balanced from there on. The first build therefore produced splits that were
+**83% SG**. The splits were still internally consistent — train, val and test were all skewed the same way,
+so the comparison would have been valid — but the task would silently have been "PII in Singapore-formatted
+documents", and any claim about generalisation would have been wrong. Reservoir sampling gives a uniform draw
+over the entire split at O(n) memory; the cost is one full pass (~10 min, paid once).
+**Revisit if:** never. The cost is a one-time build.
+
+---
+
+## D-008 · Keep `SEX` and `GENDER` as distinct classes (moot for now)
+
+**Date:** 2026-08-25
+**Chose:** Treat them as genuinely different classes — though both fall outside the 12 selected in D-006.
+**Why:** They looked like near-duplicates on the dataset card, but inspecting real rows settled it: a single
+record carries `Sex: M` alongside `Gender Identity: Two-spirit`, so they encode different attributes and
+merging them would have destroyed a real distinction.
+**Revisit if:** the label set is widened to all 20 classes, at which point this becomes live again and the
+student's confusion matrix between the two is worth checking specifically.
