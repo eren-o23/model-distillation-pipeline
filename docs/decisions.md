@@ -124,6 +124,9 @@ appearing after that, evenly balanced from there on. The first build therefore p
 so the comparison would have been valid — but the task would silently have been "PII in Singapore-formatted
 documents", and any claim about generalisation would have been wrong. Reservoir sampling gives a uniform draw
 over the entire split at O(n) memory; the cost is one full pass (~10 min, paid once).
+**Measured outcome:** SG fell from 6,666/8,000 (83%) to 957/8,000 (12%), with GB/CA/IN/US each landing at
+21-23% — 8,000 sampled from 161,426 eligible English train rows, and 2,000 from 40,340 eligible validation
+rows. `data/manifest.json` records the SHA256, seed, and per-split label and region distribution.
 **Revisit if:** never. The cost is a one-time build.
 
 ---

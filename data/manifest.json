@@ -1,0 +1,99 @@
+{
+  "dataset": "ai4privacy/pii-masking-openpii-1.5m",
+  "language": "en",
+  "seed": 20260825,
+  "labels": [
+    "CITY",
+    "CREDITCARDNUMBER",
+    "DATE",
+    "EMAIL",
+    "GIVENNAME",
+    "IDCARDNUM",
+    "SOCIALNUM",
+    "STREET",
+    "SURNAME",
+    "TAXNUM",
+    "TELEPHONENUM",
+    "ZIPCODE"
+  ],
+  "splits": {
+    "train": {
+      "n": 8000,
+      "sha256": "c9824210ab62d5dbe6299b8bbd83cf304edc8d8880a3fe8cf2e7a4ed43531478",
+      "entities": 45519,
+      "label_counts": {
+        "GIVENNAME": 7511,
+        "DATE": 7368,
+        "SURNAME": 6353,
+        "EMAIL": 4564,
+        "CITY": 4182,
+        "TELEPHONENUM": 3316,
+        "STREET": 2944,
+        "ZIPCODE": 2568,
+        "IDCARDNUM": 1953,
+        "CREDITCARDNUMBER": 1876,
+        "TAXNUM": 1501,
+        "SOCIALNUM": 1383
+      },
+      "regions": {
+        "GB": 1810,
+        "CA": 1779,
+        "IN": 1738,
+        "US": 1716,
+        "SG": 957
+      }
+    },
+    "val": {
+      "n": 1000,
+      "sha256": "23726f2bde210eeae8b081f58b27d3242a58b54b68112dc45c77eb4395d15faa",
+      "entities": 5803,
+      "label_counts": {
+        "DATE": 960,
+        "GIVENNAME": 935,
+        "SURNAME": 797,
+        "EMAIL": 595,
+        "CITY": 537,
+        "TELEPHONENUM": 421,
+        "STREET": 385,
+        "ZIPCODE": 326,
+        "IDCARDNUM": 256,
+        "CREDITCARDNUMBER": 226,
+        "TAXNUM": 200,
+        "SOCIALNUM": 165
+      },
+      "regions": {
+        "GB": 237,
+        "IN": 220,
+        "CA": 206,
+        "US": 206,
+        "SG": 131
+      }
+    },
+    "test": {
+      "n": 1000,
+      "sha256": "908f52f75ed401f112db462a740ee3e666b062e35042a999c2fde3eac3364eae",
+      "entities": 5740,
+      "label_counts": {
+        "DATE": 935,
+        "GIVENNAME": 892,
+        "SURNAME": 792,
+        "EMAIL": 568,
+        "CITY": 538,
+        "TELEPHONENUM": 407,
+        "STREET": 373,
+        "ZIPCODE": 310,
+        "CREDITCARDNUMBER": 279,
+        "IDCARDNUM": 275,
+        "TAXNUM": 207,
+        "SOCIALNUM": 164
+      },
+      "regions": {
+        "CA": 230,
+        "IN": 226,
+        "US": 211,
+        "GB": 210,
+        "SG": 123
+      }
+    }
+  }
+}
