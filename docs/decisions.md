@@ -133,6 +133,29 @@ Three outcomes are possible and only the measurement distinguishes them:
 Deferring costs nothing: the student only matters from Phase 3, and the bake-off runs first regardless.
 **Revisit if:** resolved by the bake-off — this entry gets a decisive outcome appended.
 
+**Resolved (student half):** the student is **Qwen3-8B**. It matches the generation of `qwen3p7-plus`, so if
+that model wins the teacher comparison the same-family design of D-005 is restored cleanly; QLoRA on a 16GB
+T4 is confirmed feasible. `Qwen2.5-7B` was dropped — it is now older than every available teacher, so it
+gained nothing over Qwen3-8B. `Qwen3-4B` was considered and rejected for now: it would improve serving cost
+and halve training time on the Kaggle quota, but the spec's headline claim is an 8B student and a weaker
+student risks understating the quality number. It stays the fallback if 8B proves impractical on a T4.
+
+---
+
+## D-012 · Teacher price is a framing choice, not just a cost
+
+**Date:** 2026-08-25
+**Chose:** Pick the teacher to model a realistic scenario, and publish a break-even **sensitivity table**
+across price tiers rather than only a single number.
+**Why:** The break-even volume is the point where GPU cost overtakes API cost, so it is directly proportional
+to the teacher's per-token price. On the same student and GPU, an illustrative sweep spans roughly 2,400
+req/day against `kimi-k3` ($3.00/$15.00) to ~54,000 req/day against `gpt-oss-120b` ($0.15/$0.60) — a 20x
+swing driven entirely by which teacher is named. Choosing the cheapest teacher would quietly rig the project
+against its own thesis; choosing the priciest would rig it in favour. Reporting the sweep alongside the
+headline makes the analysis honest and shows it generalises beyond one vendor's price list.
+**Revisit if:** never — but the table must be rebuilt from *measured* throughput and GPU cost in Phase 5, not
+from these planning estimates.
+
 ---
 
 ## D-006 · Label scope = ~12 of the 19 classes, chosen by measured frequency
