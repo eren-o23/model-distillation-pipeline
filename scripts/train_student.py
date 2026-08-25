@@ -19,6 +19,7 @@ load_split("test") raises without allow_test=True, which appears nowhere in this
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -32,6 +33,20 @@ from src.pii.teacher import SYSTEM as TEACHER_SYSTEM  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "reports" / "raw" / "phase3"
+
+# Trainer wraps the model in nn.DataParallel whenever it sees more than one GPU and the process was not
+# launched by torchrun. DataParallel re-broadcasts every parameter to every device on each forward, which
+# a 4-bit model cannot survive: bitsandbytes weights are not replicable that way, and the broadcast alone
+# asked for 2.32GB on top of a resident model — OOM at step 0, before a single step of training.
+#
+# Pinning the model with device_map is not enough; Trainer counts visible devices, not where the model
+# actually sits. So hide the second GPU unless torchrun is genuinely driving the run, in which case each
+# rank owns a full replica and DDP is real data parallelism.
+if "LOCAL_RANK" not in os.environ:
+    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+# 4GB was reserved-but-unallocated at the OOM; the allocator fragments badly on the variable-length
+# batches dynamic padding produces.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 WANDB_PROJECT = "pii-distillation"
 HF_USER = "erenrosman"
 
@@ -144,7 +159,9 @@ def main() -> None:
 
     assert torch.cuda.is_available(), "no GPU visible — check the notebook's accelerator setting"
     cap = torch.cuda.get_device_capability()
-    print(f"GPU: {torch.cuda.get_device_name(0)} (sm_{cap[0]}{cap[1]}), {torch.cuda.device_count()} visible")
+    visible = torch.cuda.device_count()
+    print(f"GPU: {torch.cuda.get_device_name(0)} (sm_{cap[0]}{cap[1]}), {visible} visible"
+          + ("" if visible > 1 else "  [second T4 hidden: DataParallel cannot replicate 4-bit weights]"))
     # bf16 needs Ampere (sm_80+) and so does FlashAttention-2. On a T4 both fail at load, not at step 1 —
     # asserting here turns a confusing traceback into a sentence (D-019).
     assert cap >= (7, 5), f"sm_{cap[0]}{cap[1]} is below the 4-bit requirement"
@@ -209,6 +226,14 @@ def main() -> None:
     ))
     model.print_trainable_parameters()
 
+    # warmup_ratio is deprecated in transformers 5.x. Computing the step count explicitly also makes the
+    # schedule legible in the log rather than implied.
+    steps_per_epoch = math.ceil(len(train_ds) / (args.batch * args.accum))
+    total_steps = steps_per_epoch * args.epochs
+    warmup_steps = max(1, round(0.03 * total_steps))
+    print(f"  {steps_per_epoch} steps/epoch x {args.epochs} epochs = {total_steps} steps "
+          f"(effective batch {args.batch * args.accum}, {warmup_steps} warmup)")
+
     best = {"f1": -1.0, "epoch": None}
 
     class EvalEachEpoch(TrainerCallback):
@@ -246,7 +271,7 @@ def main() -> None:
             gradient_accumulation_steps=args.accum,
             learning_rate=args.lr,
             lr_scheduler_type="cosine",
-            warmup_ratio=0.03,
+            warmup_steps=warmup_steps,
             fp16=True,          # bf16 is unavailable on sm_75 (D-019)
             bf16=False,
             gradient_checkpointing=True,
