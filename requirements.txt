@@ -2,3 +2,7 @@ datasets>=3.0.0
 openai>=1.0.0
 pydantic>=2.0.0
 pytest>=8.0.0
+# Tokenizer only — no torch. tests/test_prompt_render.py renders the real Qwen3 chat template to catch a
+# train/serve prompt mismatch locally, in seconds, instead of five hours into a Kaggle run.
+transformers>=4.51
+jinja2>=3.0.0

@@ -1,0 +1,22 @@
+# Phase 3 training stack — for the Kaggle 2xT4 notebook, NOT for the local venv.
+#
+# This machine stays inference-only (`requirements.txt`): it needs to run the metric and write reports,
+# not to train. `transformers` and `jinja2` are the exception — they are in requirements.txt because
+# tests/test_prompt_render.py renders the real Qwen3 chat template, and a guard that only runs on Kaggle
+# is a guard that runs after the mistake has already cost five hours.
+#
+# torch is deliberately absent. Kaggle's GPU image ships a CUDA build matched to its driver; pinning a
+# version here would make pip replace ~2.5GB of working install with one that may not load.
+#
+# trl is deliberately absent too. Its completion-only masking (`assistant_only_loss=True`) requires the
+# chat template to declare `{% generation %}` markers, and Qwen3's template has none — verified, it
+# raises rather than silently falling back. The alternative, DataCollatorForCompletionOnlyLM, matches on
+# a response-template *string* and has churned across trl releases. Masking is ~10 lines done explicitly
+# in train_student.py, against a boundary proven token-exact on 500 rows, so trl buys nothing here.
+
+transformers>=4.51      # Qwen3 support landed in 4.51
+peft>=0.14              # LoRA / QLoRA adapters
+bitsandbytes>=0.45      # 4-bit NF4 quantisation and paged_adamw_8bit
+accelerate>=1.3         # device placement, and torchrun DDP if the T4 throughput demands it
+datasets>=3.0.0
+wandb>=0.19
