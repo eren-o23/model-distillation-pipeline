@@ -69,6 +69,13 @@ Rules:
   "Chanditala Road". Never include the leading number.
 - CITY is the city name alone, kept separate from STREET.
 - DATE covers dates of birth and any other calendar date.
+- IDCARDNUM means a national identity card number ONLY. Do NOT use it for driver's licence numbers,
+  passport numbers, vehicle numbers, account numbers, reference numbers, or any other identifier. Those
+  are out of scope: leave them out of the output entirely rather than labelling them IDCARDNUM.
+- SOCIALNUM is a social security / national insurance number. Do NOT label it TELEPHONENUM, even when it
+  is formatted like a phone number.
+- Only return a label from the list above. If a piece of PII does not fit one of those labels, omit it —
+  never approximate with the closest available label.
 - If the text contains no PII, return an empty list.
 - Return ONLY JSON matching: {{"entities": [{{"label": "...", "value": "..."}}]}}"""
 

@@ -28,7 +28,22 @@ Teacher and student are from the same model family on purpose: the comparison th
 
 ## Results
 
-_Phase 1 in progress. Teacher ceiling, three-axis benchmark, and break-even volume land here._
+**Phase 1 complete.** Teacher ceiling established; student benchmark and break-even volume land here next.
+
+| | |
+|---|---|
+| **Teacher** | `qwen3p7-plus` (Fireworks) |
+| **Teacher ceiling** | **0.832 micro-F1** on held-out val ([reports/ceiling.md](reports/ceiling.md)) |
+| schema-invalid | 0.0% |
+| hallucinated values | 0 |
+
+Two candidate teachers were measured before committing budget
+([reports/teacher-comparison.md](reports/teacher-comparison.md)): `deepseek-v4-pro` scored +0.005 F1 for 3.4x
+the cost, so `qwen3p7-plus` won on economics.
+
+Strongest labels are `EMAIL` (1.000), `DATE` (0.983) and `TELEPHONENUM` (0.944). The ceiling is held down by
+`GIVENNAME`/`SURNAME` (~0.68), where the dataset's own given/family-name boundary is genuinely ambiguous on
+multicultural names, and by `IDCARDNUM` (0.377) — see the decision log for why that one resisted fixing.
 
 ## Cost
 
@@ -37,8 +52,14 @@ demonstrated, and the break-even number is meaningless without it.
 
 | Phase | Spend |
 |---|---|
-| Phase 1 — teacher bake-off | _pending_ |
-| **Total** | _pending_ |
+| Phase 1 — teacher bake-off and ceiling | ~$1.50 |
+| — of which wasted on an invalidated run | ~$1.00 |
+| **Total to date** | **~$1.50** |
+| Phase 2 projection — 8,000 examples (batch) | $1.88 |
+
+Roughly $1 of that was spent measuring truncation instead of capability, before the reasoning-token bug was
+found. It is reported rather than quietly dropped, because a cost analysis that only counts the runs that
+worked is not a cost analysis.
 
 Budget ceiling: **$50** in Fireworks credits. Fine-tuning runs on Kaggle's free tier (2×T4).
 

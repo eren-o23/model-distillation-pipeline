@@ -203,6 +203,34 @@ student would then have been flattered by comparison against it.
 
 ---
 
+## D-015 · IDCARDNUM scope leak: fixed the precision, lost the recall — kept anyway
+
+**Date:** 2026-08-25
+**Chose:** Keep the tightened prompt (micro-F1 0.832) and stop iterating, despite it making `IDCARDNUM`
+worse.
+**Over:** reverting to the looser prompt (0.828), or iterating further on the label.
+**Why:** Confusion analysis showed `IDCARDNUM` precision was 0.42 on *both* candidate teachers — an identical
+figure across two vendors, which is a strong signal of a systematic scope problem rather than model weakness.
+The cause was the same class of bug as `STREET`/`BUILDINGNUM`: `DRIVERLICENSENUM` and `PASSPORTNUM` are out
+of scope (D-006), so the model had nowhere to put them and folded them into `IDCARDNUM`
+(`"Driver Licence No.: KRITS.910081.KL.629"` → `IDCARDNUM`, gold: nothing).
+
+Instructing the model to reserve `IDCARDNUM` for national ID cards only did work — precision rose 0.423 →
+0.812 — but it **over-corrected**: recall collapsed 0.887 → 0.245, because the model can no longer tell a
+national ID number from a licence number and now omits both. Per-label F1 got *worse*: 0.573 → 0.377.
+
+Kept regardless, on three grounds: overall micro-F1 was marginally better (0.828 → 0.832), precision improved
+across the board (0.806 → 0.847), and hallucinated values fell to zero. **For distillation, label precision
+matters more than recall** — a wrong label actively teaches the student an error, while a missing one merely
+teaches less. The honest read is that 0.828 vs 0.832 is noise at n=200; the real gain is cleaner training
+labels.
+**Cost of the lesson:** one iteration, $0.09.
+**Revisit if:** Phase 4 shows the student inheriting the under-detection. The genuine fix is not prompting but
+**adding `DRIVERLICENSENUM` and `PASSPORTNUM` back to the label set** so the model has somewhere legitimate to
+put them — deferred because it would re-open D-006 and re-freeze the splits.
+
+---
+
 ## D-012 · Teacher price is a framing choice, not just a cost
 
 **Date:** 2026-08-25
