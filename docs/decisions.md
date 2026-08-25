@@ -290,6 +290,68 @@ rows. `data/manifest.json` records the SHA256, seed, and per-split label and reg
 
 ---
 
+## D-016 · Phase 2 generation runs synchronously, declining the 50% batch discount
+
+**Date:** 2026-08-25
+**Chose:** Reuse the existing synchronous `extract()` path with a 16-thread pool for all 8,000 train rows.
+**Over:** Building a Fireworks batch-inference path, which halves the per-token rate.
+**Why:** The batch API is quicker on neither axis that matters. Wall clock: a thread pool finishes in
+well under an hour and is watchable; a batch job is queue-dependent and unattended for an unknown number of
+hours. Build time: the synchronous path is already verified against 200 live calls, while the batch flow is a
+separate API surface that would need writing and debugging before it could be trusted with the run. What it
+buys is **$1.89** — the difference between $3.77 and $1.88 — against a $50 budget with ~$1.50 spent. Paying
+$1.89 to keep an expensive run interactive and resumable is the right trade at this scale.
+**Reported, not hidden:** `reports/phase2.md` prints the batch alternative next to the actual spend, so the
+declined saving is visible rather than quietly omitted from a project about cost transparency.
+**Revisit if:** a later phase needs a generation run an order of magnitude larger, where the discount stops
+being rounding error and the unattended latency stops mattering.
+
+---
+
+## D-017 · The student is trained on a ~60-token prompt, not the teacher's ~475-token one
+
+**Date:** 2026-08-25
+**Chose:** `student.SHORT_SYSTEM` — one instruction line, the 12 labels, and the output shape.
+**Over:** Training the student on `teacher.SYSTEM` verbatim, for a maximally apples-to-apples comparison.
+**Why:** The teacher's prompt is long because it has to be: ~475 of its 628 input tokens per request are the
+annotation conventions from D-014, spelled out because a prompted model has no other way to learn them. A
+fine-tuned student learns them from the weights instead, so at serving time it only needs to be told what
+shape to emit. That cuts input tokens per request roughly **4x**, and since the break-even volume is set by
+the student's cost per request against the teacher's, this feeds the project's headline number directly. It
+is also the honest form of the "own beats rent" argument: not needing a long prompt is a *real* advantage of
+owning the model, not an accounting trick.
+**Tradeoff accepted:** teacher and student no longer see identical prompts. This does not contaminate the
+comparison — both are scored on output against the same gold, and the metric never sees the prompt — but the
+writeup must state it rather than implying a matched setup.
+**Consequence:** train-time and serve-time prompts must be byte-identical or the student silently degrades,
+which is why `SHORT_SYSTEM` lives in one importable module used by Phase 3 and Phase 5 alike, with a test
+asserting the exact bytes of the assistant turn.
+**Revisit if:** Phase 4 shows the student failing a specific convention (given-name grouping, street numbers,
+verbatim dates). The fix would be adding that one rule back to the short prompt, not restoring all 475 tokens.
+
+---
+
+## D-018 · Teacher outputs are repaired, not filtered against gold
+
+**Date:** 2026-08-25
+**Chose:** Drop schema-invalid outputs, strip entities whose value does not occur in the source text, and
+keep everything else — including examples the teacher simply got wrong.
+**Over:** Also dropping examples whose per-example F1 against train gold falls below a threshold.
+**Why:** The train split has gold labels, so a gold-agreement filter is *available* — but using it would
+quietly change what the project claims. The thesis is distillation: the student learns from the teacher, and
+a real deployment generating training data from a frontier model has no gold to filter against. Filtering
+would also train the student only on the examples the teacher found easy, which risks a student that looks
+good on the benchmark and fails on exactly the hard cases Phase 5's router is supposed to escalate.
+The two repairs that *are* applied need no gold and are unarguable: unparseable output contains nothing to
+learn, and a value absent from the input can never be a correct extraction — teaching it would teach the
+student to invent, which is the worst failure mode for a redactor.
+**Measured, not applied:** `reports/phase2.md` reports how many rows survive and what label quality results at
+thresholds 0.0/0.5/0.7/0.9/1.0, so the option is costed and available to Phase 3 without being taken now.
+**Revisit if:** Phase 3's student underperforms and the loss curves suggest label noise rather than capacity.
+The sweep says what the trade costs in training rows before any of it is re-run.
+
+---
+
 ## D-008 · Keep `SEX` and `GENDER` as distinct classes (moot for now)
 
 **Date:** 2026-08-25
