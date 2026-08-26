@@ -83,13 +83,19 @@ def generate(model, tok, prompts: list[str], batch_size: int = 8) -> list[str]:
     for start in range(0, len(order), batch_size):
         idx = order[start : start + batch_size]
         batch = tok([prompts[i] for i in idx], return_tensors="pt", padding=True).to(model.device)
-        gen = model.generate(
-            **batch,
-            max_new_tokens=MAX_NEW_TOKENS,
-            do_sample=False,  # greedy: the benchmark must be reproducible run to run
-            pad_token_id=tok.pad_token_id,
-            eos_token_id=tok.eos_token_id,
-        )
+        # Autocast so generation runs in the same precision regime as training. Without it the mixed
+        # dtypes inside a QLoRA model collide: layer norms are deliberately fp32 (they need the range),
+        # while the output head is fp16, so the final projection gets an fp32 activation against an fp16
+        # weight and raises "expected scalar type Float but found Half". Training never sees this because
+        # AMP inserts the cast; generation under no_grad does not.
+        with torch.autocast("cuda", dtype=torch.float16):
+            gen = model.generate(
+                **batch,
+                max_new_tokens=MAX_NEW_TOKENS,
+                do_sample=False,  # greedy: the benchmark must be reproducible run to run
+                pad_token_id=tok.pad_token_id,
+                eos_token_id=tok.eos_token_id,
+            )
         # Slice off the prompt by width rather than by string matching: left padding makes every row in
         # the batch start at the same offset, so this is exact.
         completions = tok.batch_decode(gen[:, batch["input_ids"].shape[1] :], skip_special_tokens=True)
