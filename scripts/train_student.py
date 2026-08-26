@@ -237,6 +237,10 @@ def main() -> None:
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     assert model.is_gradient_checkpointing, "gradient checkpointing is off — an 8B will not fit without it"
     print(f"  gradient checkpointing: on · weights resident {torch.cuda.memory_allocated() / 2**30:.2f} GiB")
+    # Peak is measured per phase. A single figure spanning the whole process cannot say whether the
+    # ceiling came from training or from the generation eval, and those have opposite fixes: a smaller
+    # training batch, versus a smaller eval batch.
+    torch.cuda.reset_peak_memory_stats()
 
     # warmup_ratio is deprecated in transformers 5.x. Computing the step count explicitly also makes the
     # schedule legible in the log rather than implied.
@@ -267,10 +271,17 @@ def main() -> None:
             epoch = round(state.epoch)
             adapter_dir = out_dir / f"epoch{epoch}"
             model.save_pretrained(adapter_dir)
+
+            train_peak = torch.cuda.max_memory_allocated() / 2**30
+            torch.cuda.reset_peak_memory_stats()
             # Half the eval batch of a standalone run: the training state is still resident here, and an
             # OOM at epoch 1 would throw away the epoch that produced it.
             payload = run_eval(model, tok_gen, eval_rows, SHORT_SYSTEM, f"{name}-epoch{epoch}",
                                wandb_run=wandb.run, step=state.global_step, batch_size=4)
+            print(f"  peak GiB — training {train_peak:.2f}, eval "
+                  f"{torch.cuda.max_memory_allocated() / 2**30:.2f}, of "
+                  f"{torch.cuda.get_device_properties(0).total_memory / 2**30:.2f}", flush=True)
+            torch.cuda.reset_peak_memory_stats()
             if payload["micro_f1"] > best["f1"]:
                 best.update(f1=payload["micro_f1"], epoch=epoch, dir=str(adapter_dir))
 
@@ -307,9 +318,6 @@ def main() -> None:
 
     # The smoke test's real output. Projected against the FULL dataset and 3 epochs regardless of what
     # this run did, because that is the number that decides single-GPU vs torchrun DDP.
-    print(f"peak GPU memory: {torch.cuda.max_memory_allocated() / 2**30:.2f} GiB of "
-          f"{torch.cuda.get_device_properties(0).total_memory / 2**30:.2f} GiB", flush=True)
-
     sec_per_step = result.metrics["train_runtime"] / max(trainer.state.global_step, 1)
     n_rows = sum(1 for _ in (DATA_DIR / "train_sft.jsonl").open())
     full_steps = 3 * n_rows / (args.batch * args.accum)
