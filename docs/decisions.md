@@ -459,3 +459,52 @@ is not a detail — training on the full sequence would spend two thirds of the 
 reproduce a system prompt it is given for free at inference.
 **Revisit if:** Qwen ships a template with generation markers, or the training loop needs something TRL
 provides and this does not (packing, DPO, or a reward model).
+
+---
+
+## D-024 · Two epochs, chosen on measured throughput
+
+**Date:** 2026-08-26
+**Chose:** 2 epochs per configuration, per-device batch 4 x grad-accum 4 (effective 16).
+**Over:** the 3 epochs the Phase 3 plan assumed.
+**Why:** Measured on the target hardware rather than estimated. At **24.44 s/step** a 3-epoch run over
+7,842 examples is **10.5h**, past Kaggle's ~9h session cap, so it could only complete by resuming across
+two sessions. 2 epochs is **7.0h** and finishes unattended in one, which takes the least-tested code in the
+phase — the resume path — off the critical path for both configurations.
+
+The epoch count is not a stopping decision that can be deferred: `lr_scheduler_type="cosine"` decays over
+the declared total, so a 3-epoch schedule halted at epoch 2 leaves the model mid-decay at a still-high LR
+and is strictly worse than a 2-epoch schedule that completes. The number has to be committed up front.
+
+Supporting evidence that epoch 3 was unlikely to pay: a single epoch over a **256-example** subset (16
+optimizer steps) already reached **0.692 micro-F1** against the teacher's 0.832, at 0.5% schema-invalid,
+with `EMAIL` 0.989 and `TELEPHONENUM` 0.898. Training loss was 0.158. The capability transfers fast, and
+the spec's own guidance is to watch for overfitting after two or three epochs, not to assume three helps.
+**Cost, stated plainly:** if the epoch-1 to epoch-2 curve is still climbing, this leaves quality on the
+table and the report must say so rather than presenting 2 as optimal. The per-epoch val curve is what
+shows whether that happened.
+**Revisit if:** the two-epoch curves are still rising at the end, in which case a 3-epoch run is worth
+21h of quota across two sessions — or training moves to a GPU where 3 epochs fits a single session.
+
+---
+
+## D-025 · The frozen embedding and output head stay in fp16
+
+**Date:** 2026-08-26
+**Chose:** recast non-trainable fp32 tensors over 100M parameters back to fp16 after
+`prepare_model_for_kbit_training`, and run generation under `torch.autocast`.
+**Over:** accepting PEFT's blanket fp32 upcast.
+**Why:** The upcast exists so fp16 training stays numerically stable, and for layer norms that is right and
+nearly free. For Qwen3's **151,936-token vocabulary** it is neither: `embed_tokens` and `lm_head` are ~622M
+parameters each, and upcasting them cost **2.32GiB of a 14.56GiB card** — measured, resident went 5.66 to
+7.98 GiB. Neither tensor is trained here (LoRA targets only the attention and MLP projections), so neither
+carries an optimiser state or receives a gradient, and the precision buys nothing.
+**Effect:** per-device batch 4 became affordable where it had OOMed, taking training from 39.79 to 24.44
+s/step — **1.63x**, and the difference between a run that fits a Kaggle session and one that does not.
+**Consequence:** the recast exposed a latent dtype mismatch. Layer norms remain fp32 by design, so the final
+norm emits an fp32 activation into an fp16 output projection. Training never hit it because AMP inserts the
+cast; generation under `no_grad` did, raising `expected scalar type Float but found Half`. Generating under
+autocast fixes it and has the independent merit of putting eval in the same precision regime as training.
+**Revisit if:** loss goes unstable or NaN — measured across four runs it did not, holding at 0.158 with
+grad-norm 0.318 — or the student is swapped for a model with a small vocabulary, where the whole trade is
+worth far less.

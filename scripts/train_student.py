@@ -144,7 +144,9 @@ def main() -> None:
     ap.add_argument("--baseline", choices=["short", "teacher"], help="eval the untuned base and exit")
     ap.add_argument("--eval-adapter", help="eval an existing adapter (repo id or local path) and exit")
     ap.add_argument("--eval-n", type=int, default=EVAL_N, help="val rows to score; 0 = all 1,000")
-    ap.add_argument("--epochs", type=int, default=3)
+    # 2, not 3 — chosen on measured throughput, see D-024. At 24.44 s/step a 3-epoch run is 10.5h and
+    # cannot finish inside Kaggle's 9h session cap; 2 epochs is 7.0h and completes unattended.
+    ap.add_argument("--epochs", type=int, default=2)
     ap.add_argument("--limit", type=int, help="cap training rows, for the smoke test")
     ap.add_argument("--lr", type=float, default=2e-4)
     # Effective batch stays 16 whatever the split. Per-device 4 is affordable once the frozen embedding
