@@ -147,8 +147,11 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=3)
     ap.add_argument("--limit", type=int, help="cap training rows, for the smoke test")
     ap.add_argument("--lr", type=float, default=2e-4)
-    ap.add_argument("--batch", type=int, default=4)
-    ap.add_argument("--accum", type=int, default=4)
+    # Effective batch stays 16. Per-device 2 rather than 4 because an 8B on a 14.56GiB T4 has no room
+    # for a long batch: at 4 the second step's backward asked for 1.31GiB it did not have. Dynamic
+    # padding means a smaller batch also wastes less on the length spread.
+    ap.add_argument("--batch", type=int, default=2)
+    ap.add_argument("--accum", type=int, default=8)
     ap.add_argument("--resume", action="store_true", help="continue from the last checkpoint")
     ap.add_argument("--out", default="/kaggle/working/phase3")
     ap.add_argument("--no-push", action="store_true", help="skip the HF Hub upload")
@@ -226,6 +229,15 @@ def main() -> None:
     ))
     model.print_trainable_parameters()
 
+    # Enable explicitly AFTER the PEFT wrap, and then check rather than assume. Three separate places
+    # ask for checkpointing (prepare_model_for_kbit_training, this call, TrainingArguments) and it is
+    # still possible for none of them to stick through the wrap — the symptom is not an error but ~7GB
+    # of stored activations and an OOM on the second step, which reads as "the T4 is too small".
+    model.config.use_cache = False
+    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+    assert model.is_gradient_checkpointing, "gradient checkpointing is off — an 8B will not fit without it"
+    print(f"  gradient checkpointing: on · weights resident {torch.cuda.memory_allocated() / 2**30:.2f} GiB")
+
     # warmup_ratio is deprecated in transformers 5.x. Computing the step count explicitly also makes the
     # schedule legible in the log rather than implied.
     steps_per_epoch = math.ceil(len(train_ds) / (args.batch * args.accum))
@@ -295,6 +307,9 @@ def main() -> None:
 
     # The smoke test's real output. Projected against the FULL dataset and 3 epochs regardless of what
     # this run did, because that is the number that decides single-GPU vs torchrun DDP.
+    print(f"peak GPU memory: {torch.cuda.max_memory_allocated() / 2**30:.2f} GiB of "
+          f"{torch.cuda.get_device_properties(0).total_memory / 2**30:.2f} GiB", flush=True)
+
     sec_per_step = result.metrics["train_runtime"] / max(trainer.state.global_step, 1)
     n_rows = sum(1 for _ in (DATA_DIR / "train_sft.jsonl").open())
     full_steps = 3 * n_rows / (args.batch * args.accum)
