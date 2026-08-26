@@ -211,12 +211,24 @@ def main() -> None:
     train_ds = build_dataset(tok_train, DATA_DIR / "train_sft.jsonl", args.limit)
 
     model, _ = load_model()
+
+    # prepare_model_for_kbit_training upcasts non-quantised parameters to fp32 for fp16 stability. On a
+    # 151,936-token vocabulary that is not a rounding error: embed_tokens and lm_head are ~622M params
+    # each, so an fp16->fp32 upcast of them costs ~2.5GiB of a 14.56GiB card. Print both sides so the
+    # cost is a number rather than a suspicion.
+    before = torch.cuda.memory_allocated() / 2**30
+    big = {n: (p.dtype, p.numel()) for n, p in model.named_parameters() if p.numel() > 100_000_000}
     # The non-reentrant kwarg has to be passed here too, not only in TrainingArguments: this call enables
     # checkpointing immediately with its own defaults, and the reentrant path cannot see LoRA params as
     # requiring grad.
     model = prepare_model_for_kbit_training(
         model, use_gradient_checkpointing=True, gradient_checkpointing_kwargs={"use_reentrant": False}
     )
+    after = torch.cuda.memory_allocated() / 2**30
+    print(f"  resident {before:.2f} -> {after:.2f} GiB across prepare_model_for_kbit_training")
+    for n, (dt, num) in big.items():
+        now = dict(model.named_parameters()).get(n)
+        print(f"    {n}: {num/1e6:.0f}M  {dt} -> {now.dtype if now is not None else '?'}")
     # alpha = 2*rank holds the alpha/r scaling constant across the two configs, so "rank 8 vs 32" varies
     # adapter capacity alone instead of confounding it with a 4x change in effective update size (D-020).
     model = get_peft_model(model, LoraConfig(
