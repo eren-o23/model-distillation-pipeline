@@ -16,7 +16,10 @@
 
 transformers>=4.51      # Qwen3 support landed in 4.51
 peft>=0.14              # LoRA / QLoRA adapters
-bitsandbytes>=0.45      # 4-bit NF4 quantisation and paged_adamw_8bit
+# 0.46.1 is transformers 5.x's floor for 4-bit, not a preference. Kaggle's image ships an older build
+# that satisfied a >=0.45 pin, so pip left it in place and the failure arrived at model load as a bare
+# ImportError. Pin the real floor.
+bitsandbytes>=0.46.1    # 4-bit NF4 quantisation and paged_adamw_8bit
 accelerate>=1.3         # device placement, and torchrun DDP if the T4 throughput demands it
 datasets>=3.0.0
 wandb>=0.19
