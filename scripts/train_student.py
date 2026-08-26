@@ -147,11 +147,11 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=3)
     ap.add_argument("--limit", type=int, help="cap training rows, for the smoke test")
     ap.add_argument("--lr", type=float, default=2e-4)
-    # Effective batch stays 16. Per-device 2 rather than 4 because an 8B on a 14.56GiB T4 has no room
-    # for a long batch: at 4 the second step's backward asked for 1.31GiB it did not have. Dynamic
-    # padding means a smaller batch also wastes less on the length spread.
-    ap.add_argument("--batch", type=int, default=2)
-    ap.add_argument("--accum", type=int, default=8)
+    # Effective batch stays 16 whatever the split. Per-device 4 is affordable once the frozen embedding
+    # and output head are back in fp16; before that reclaim, batch 4's backward asked for 1.31GiB the
+    # card did not have.
+    ap.add_argument("--batch", type=int, default=4)
+    ap.add_argument("--accum", type=int, default=4)
     ap.add_argument("--resume", action="store_true", help="continue from the last checkpoint")
     ap.add_argument("--out", default="/kaggle/working/phase3")
     ap.add_argument("--no-push", action="store_true", help="skip the HF Hub upload")
@@ -229,6 +229,24 @@ def main() -> None:
     for n, (dt, num) in big.items():
         now = dict(model.named_parameters()).get(n)
         print(f"    {n}: {num/1e6:.0f}M  {dt} -> {now.dtype if now is not None else '?'}")
+
+    # Put the giant frozen tensors back in fp16. The blanket fp32 upcast above is correct for layer
+    # norms — they are tiny and fp16 training needs the headroom — but Qwen3's 151,936-token vocabulary
+    # makes embed_tokens and lm_head ~622M params each, so upcasting them costs 2.32GiB of a 14.56GiB
+    # card and buys nothing: LoRA targets only the attention and MLP projections, so neither tensor is
+    # trained, holds an optimiser state, or receives a gradient.
+    #
+    # Selected by size and requires_grad rather than by name, so it cannot silently miss a renamed
+    # tensor or catch a trainable one.
+    reclaimed = 0
+    for p in model.parameters():
+        if p.dtype == torch.float32 and p.numel() > 100_000_000 and not p.requires_grad:
+            p.data = p.data.to(torch.float16)
+            reclaimed += p.numel() * 2
+    if reclaimed:
+        torch.cuda.empty_cache()
+        print(f"  recast {reclaimed / 2**30:.2f} GiB of frozen fp32 back to fp16 · resident now "
+              f"{torch.cuda.memory_allocated() / 2**30:.2f} GiB")
     # alpha = 2*rank holds the alpha/r scaling constant across the two configs, so "rank 8 vs 32" varies
     # adapter capacity alone instead of confounding it with a 4x change in effective update size (D-020).
     model = get_peft_model(model, LoraConfig(
