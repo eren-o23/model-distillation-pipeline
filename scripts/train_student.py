@@ -281,6 +281,7 @@ def main() -> None:
           f"(effective batch {args.batch * args.accum}, {warmup_steps} warmup)")
 
     best = {"f1": -1.0, "epoch": None}
+    eval_seconds: list[float] = []
 
     class EvalEachEpoch(TrainerCallback):
         """Per-epoch val score against gold, plus the adapter that produced it.
@@ -304,10 +305,12 @@ def main() -> None:
 
             train_peak = torch.cuda.max_memory_allocated() / 2**30
             torch.cuda.reset_peak_memory_stats()
-            # Half the eval batch of a standalone run: the training state is still resident here, and an
-            # OOM at epoch 1 would throw away the epoch that produced it.
+            # Measured: eval peaks at 6.84GiB against training's 12.13, so the card is mostly idle here.
+            # Generation is latency-bound on a T4, and a wider batch is close to free — at 32 rows a
+            # batch of 4 took 202.9s, which at the default 200 rows would be 21 minutes per epoch.
             payload = run_eval(model, tok_gen, eval_rows, SHORT_SYSTEM, f"{name}-epoch{epoch}",
-                               wandb_run=wandb.run, step=state.global_step, batch_size=4)
+                               wandb_run=wandb.run, step=state.global_step, batch_size=16)
+            eval_seconds.append(payload["eval_seconds"])
             print(f"  peak GiB — training {train_peak:.2f}, eval "
                   f"{torch.cuda.max_memory_allocated() / 2**30:.2f}, of "
                   f"{torch.cuda.get_device_properties(0).total_memory / 2**30:.2f}", flush=True)
@@ -348,11 +351,21 @@ def main() -> None:
 
     # The smoke test's real output. Projected against the FULL dataset and 3 epochs regardless of what
     # this run did, because that is the number that decides single-GPU vs torchrun DDP.
-    sec_per_step = result.metrics["train_runtime"] / max(trainer.state.global_step, 1)
+    # train_runtime includes the epoch-end eval callback, which on a smoke run is most of it. Subtract
+    # it, or the projection is dominated by a cost that does not scale with dataset size.
+    eval_total = sum(eval_seconds)
+    train_only = result.metrics["train_runtime"] - eval_total
+    sec_per_step = train_only / max(trainer.state.global_step, 1)
+
     n_rows = sum(1 for _ in (DATA_DIR / "train_sft.jsonl").open())
-    full_steps = 3 * n_rows / (args.batch * args.accum)
-    print(f"\n{sec_per_step:.2f} s/step measured over {trainer.state.global_step} steps · "
-          f"a full 3-epoch run projects to {sec_per_step * full_steps / 3600:.1f}h", flush=True)
+    per_epoch_s = sec_per_step * n_rows / (args.batch * args.accum)
+    per_eval_s = (eval_total / len(eval_seconds)) if eval_seconds else 0.0
+    print(f"\n{sec_per_step:.2f} s/step training over {trainer.state.global_step} steps "
+          f"(eval excluded: {eval_total:.0f}s across {len(eval_seconds)})", flush=True)
+    for n_ep in (2, 3):
+        total = (per_epoch_s * n_ep + per_eval_s * n_ep) / 3600
+        fits = "fits a 9h session" if total < 8.5 else "EXCEEDS a 9h session"
+        print(f"  full run, {n_ep} epochs: {total:.1f}h  ({fits})", flush=True)
 
     print(f"\nbest epoch: {best['epoch']} at micro-F1 {best['f1']:.3f}")
     (RAW / f"{name}-summary.json").write_text(json.dumps(
