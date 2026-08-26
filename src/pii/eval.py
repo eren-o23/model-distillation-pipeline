@@ -8,6 +8,7 @@ GPU-side module: importing it requires torch. Nothing in the local test suite im
 """
 
 import os
+import time
 
 import torch
 
@@ -79,6 +80,7 @@ def generate(model, tok, prompts: list[str], batch_size: int = 8) -> list[str]:
     """
     order = sorted(range(len(prompts)), key=lambda i: len(prompts[i]))
     out: dict[int, str] = {}
+    t0 = time.time()
 
     for start in range(0, len(order), batch_size):
         idx = order[start : start + batch_size]
@@ -100,6 +102,13 @@ def generate(model, tok, prompts: list[str], batch_size: int = 8) -> list[str]:
         # the batch start at the same offset, so this is exact.
         completions = tok.batch_decode(gen[:, batch["input_ids"].shape[1] :], skip_special_tokens=True)
         out.update(zip(idx, completions, strict=True))
+
+        # A 1,000-row eval is ~50 minutes of silence otherwise, and inside a headless Save & Run All
+        # there is no way to tell a slow generation from a hung one.
+        done = len(out)
+        elapsed = time.time() - t0
+        eta = elapsed / done * (len(prompts) - done)
+        print(f"    gen {done}/{len(prompts)}  {elapsed:.0f}s elapsed, ~{eta:.0f}s left", flush=True)
 
     return [out[i] for i in range(len(prompts))]
 
