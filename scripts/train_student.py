@@ -336,10 +336,20 @@ def main() -> None:
             # Reentrant checkpointing does not see the LoRA params as requiring grad, and the run fails
             # with "none of the inputs have requires_grad" rather than training badly.
             gradient_checkpointing_kwargs={"use_reentrant": False},
-            optim="paged_adamw_8bit",
+            # NOT paged. Paged optimizers keep their state in CUDA unified memory so it can spill to host
+            # RAM under pressure — worth it when the optimizer state is large, pointless for LoRA where
+            # it is ~350MB even at rank 32. Rank 32 died 71% into epoch 1 with an illegal memory access
+            # inside the paged optimizer's sync_gpu; rank 8 survived only because its state was small
+            # enough that paging never engaged. Removing the paging removes the fault path entirely.
+            optim="adamw_8bit",
             logging_steps=10,
-            save_strategy="epoch",
-            save_total_limit=1,  # /kaggle/working caps at 20GB
+            # Checkpoint on steps, not epochs. The rank-32 crash landed 71% into epoch 1, so an
+            # epoch-only strategy had written nothing and 2.6h of GPU was unrecoverable. LoRA
+            # checkpoints are adapter-sized, so 250 steps (~1.8h apart at 26.5 s/step) is cheap
+            # insurance that makes --resume able to actually save a run.
+            save_strategy="steps",
+            save_steps=250,
+            save_total_limit=2,  # /kaggle/working caps at 20GB
             report_to="wandb",
             run_name=name,
             seed=20260825,       # the same seed the splits are frozen with
