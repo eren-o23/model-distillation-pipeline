@@ -115,6 +115,29 @@ def main() -> None:
 
     gpu_hours = {c: (s or {}).get("train_runtime_s", 0) / 3600 for c, s in summaries.items()}
 
+    # Whether the val curve turned over is the one thing the per-epoch table shows but does not say. It
+    # decides whether D-024's compute-driven epoch budget cost anything, so it is stated either way.
+    notes = []
+    for c, es in runs.items():
+        if len(es) < 2:
+            continue
+        trace = " → ".join(f"{e['micro_f1']:.3f}" for e in es)
+        peak = max(es, key=lambda e: e["micro_f1"])
+        if peak["epoch"] < es[-1]["epoch"]:
+            notes.append(
+                f"**`{c}` peaked at epoch {peak['epoch']} and declined after it** ({trace}). The curve "
+                "turning over is the overfitting point the spec warns about — found, not assumed. It also "
+                "means the epoch budget was never the binding constraint on quality, so D-024's choice of "
+                "2 epochs on compute grounds cost nothing here."
+            )
+        else:
+            notes.append(
+                f"**`{c}` was still improving at the last epoch** ({trace}), so the 2-epoch budget chosen "
+                "on compute grounds (D-024) left quality on the table. Recorded rather than presented as "
+                "optimal."
+            )
+    epoch_notes = "\n\n".join(notes)
+
     n_train = sum(1 for _ in (ROOT / "data" / "train_sft.jsonl").open())
 
     report = f"""# Phase 3 — QLoRA fine-tune of Qwen3-8B
@@ -150,6 +173,8 @@ and the gap between those two baselines is what the fine-tune replaced.
 Checkpoints are selected on **val micro-F1, not val loss** (D-021) — they disagree, and F1 is the reported
 number. Evaluation is against gold, so the student is measured on the same absolute yardstick as the teacher
 and can in principle exceed it.
+
+{epoch_notes}
 
 ## Rank 8 vs rank 32
 

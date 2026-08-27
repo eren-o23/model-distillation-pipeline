@@ -1,0 +1,735 @@
+{
+  "micro_f1": 0.8223710122095313,
+  "micro_precision": 0.8312101910828026,
+  "micro_recall": 0.813717848791894,
+  "n_examples": 200,
+  "schema_invalid": 0,
+  "schema_invalid_rate": 0.0,
+  "hallucinated": 1,
+  "per_label": {
+    "CITY": {
+      "precision": 0.7769784172661871,
+      "recall": 0.8120300751879699,
+      "f1": 0.7941176470588235,
+      "support": 133
+    },
+    "CREDITCARDNUMBER": {
+      "precision": 1.0,
+      "recall": 0.8085106382978723,
+      "f1": 0.8941176470588235,
+      "support": 47
+    },
+    "DATE": {
+      "precision": 0.9854368932038835,
+      "recall": 0.9712918660287081,
+      "f1": 0.9783132530120482,
+      "support": 209
+    },
+    "EMAIL": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 131
+    },
+    "GIVENNAME": {
+      "precision": 0.6732673267326733,
+      "recall": 0.6834170854271356,
+      "f1": 0.6783042394014963,
+      "support": 199
+    },
+    "IDCARDNUM": {
+      "precision": 0.8333333333333334,
+      "recall": 0.2830188679245283,
+      "f1": 0.4225352112676056,
+      "support": 53
+    },
+    "SOCIALNUM": {
+      "precision": 1.0,
+      "recall": 0.5142857142857142,
+      "f1": 0.6792452830188679,
+      "support": 35
+    },
+    "STREET": {
+      "precision": 0.8645833333333334,
+      "recall": 0.9222222222222223,
+      "f1": 0.89247311827957,
+      "support": 90
+    },
+    "SURNAME": {
+      "precision": 0.6630434782608695,
+      "recall": 0.7134502923976608,
+      "f1": 0.6873239436619718,
+      "support": 171
+    },
+    "TAXNUM": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "support": 39
+    },
+    "TELEPHONENUM": {
+      "precision": 0.8717948717948718,
+      "recall": 0.9807692307692307,
+      "f1": 0.9230769230769229,
+      "support": 104
+    },
+    "ZIPCODE": {
+      "precision": 0.7654320987654321,
+      "recall": 0.8611111111111112,
+      "f1": 0.8104575163398693,
+      "support": 72
+    }
+  },
+  "tag": "r8-epoch2",
+  "eval_seconds": 516.9,
+  "samples": [
+    {
+      "source_text": "Subject: Packing Checklist for Watersport Activities – Prof Enaya Danculea.\nDear Team, please ensure you have your gear ready by June/59; you can reach me at 1939JK@yahoo.com or +72-631459286 for any queries.\nThe meeting point is at the waterfront facility located at 1222 Chanditala Road, Chaksu Amdanga Mauza 713362; remember to bring a waterproof bag, a life jacket, and your 52-year-old enthusiasm, regardless of Two-spirit or skill level.\nFor equipment rental, a valid credit card (e.g., 3606540927509996) will be required at check‑in.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Enaya"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Danculea"
+        },
+        {
+          "label": "DATE",
+          "value": "June/59"
+        },
+        {
+          "label": "EMAIL",
+          "value": "1939JK@yahoo.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+72-631459286"
+        },
+        {
+          "label": "STREET",
+          "value": "Chanditala Road"
+        },
+        {
+          "label": "CITY",
+          "value": "Chaksu Amdanga Mauza"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "713362"
+        },
+        {
+          "label": "CREDITCARDNUMBER",
+          "value": "3606540927509996"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Enaya\"},{\"label\":\"SURNAME\",\"value\":\"Danculea\"},{\"label\":\"DATE\",\"value\":\"June/59\"},{\"label\":\"EMAIL\",\"value\":\"1939JK@yahoo.com\"},{\"label\":\"TELEPHONENUM\",\"value\":\"+72-631459286\"},{\"label\":\"STREET\",\"value\":\"Chanditala Road\"},{\"label\":\"CITY\",\"value\":\"Chaksu Amdanga Mauza\"},{\"label\":\"ZIPCODE\",\"value\":\"713362\"},{\"label\":\"CREDITCARDNUMBER\",\"value\":\"3606540927509996\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Enaya"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Danculea"
+        },
+        {
+          "label": "DATE",
+          "value": "June/59"
+        },
+        {
+          "label": "EMAIL",
+          "value": "1939JK@yahoo.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+72-631459286"
+        },
+        {
+          "label": "STREET",
+          "value": "Chanditala Road"
+        },
+        {
+          "label": "CITY",
+          "value": "Chaksu Amdanga Mauza"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "713362"
+        },
+        {
+          "label": "CREDITCARDNUMBER",
+          "value": "3606540927509996"
+        }
+      ]
+    },
+    {
+      "source_text": "Blog Article – “From Trash to Treasure: Repurposed Canvas Art”\n\nBy Ayse Agyemang – Published on October 13th, 1960  \n\nIn today’s eco‑conscious world, artists are turning discarded canvases into museum‑quality works, and our city of Halifax is no exception. I interviewed several local creators who shared their techniques for cleaning, priming, and painting over aged fabric, revealing hidden textures that add character. Readers can download a free guide by emailing AH@hotmail.com or calling +68 40-169 8714 for workshop registration. Join the movement, and let your next masterpiece be a story of renewal.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Ayse"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Agyemang"
+        },
+        {
+          "label": "DATE",
+          "value": "October 13th, 1960"
+        },
+        {
+          "label": "CITY",
+          "value": "Halifax"
+        },
+        {
+          "label": "EMAIL",
+          "value": "AH@hotmail.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+68 40-169 8714"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Ayse\"},{\"label\":\"SURNAME\",\"value\":\"Agyemang\"},{\"label\":\"DATE\",\"value\":\"October 13th, 1960\"},{\"label\":\"CITY\",\"value\":\"Halifax\"},{\"label\":\"EMAIL\",\"value\":\"AH@hotmail.com\"},{\"label\":\"TELEPHONENUM\",\"value\":\"+68 40-169 8714\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Ayse"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Agyemang"
+        },
+        {
+          "label": "DATE",
+          "value": "October 13th, 1960"
+        },
+        {
+          "label": "CITY",
+          "value": "Halifax"
+        },
+        {
+          "label": "EMAIL",
+          "value": "AH@hotmail.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+68 40-169 8714"
+        }
+      ]
+    },
+    {
+      "source_text": "On 25/12/1990, Mister Jaclyn Turchany published the landmark paper describing the double‑helix structure of DNA, a breakthrough that transformed modern biology; the correspondence about the discovery was later archived under VA1951@tutanota.com for historical reference. The impact of this milestone is still felt today as researchers worldwide cite the original work while institutions keep the original laboratory notes in a secure vault identified by 044775208677.",
+      "gold": [
+        {
+          "label": "DATE",
+          "value": "25/12/1990"
+        },
+        {
+          "label": "GIVENNAME",
+          "value": "Jaclyn"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Turchany"
+        },
+        {
+          "label": "EMAIL",
+          "value": "VA1951@tutanota.com"
+        },
+        {
+          "label": "IDCARDNUM",
+          "value": "044775208677"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"DATE\",\"value\":\"25/12/1990\"},{\"label\":\"GIVENNAME\",\"value\":\"Jaclyn\"},{\"label\":\"SURNAME\",\"value\":\"Turchany\"},{\"label\":\"EMAIL\",\"value\":\"VA1951@tutanota.com\"}]}",
+      "parsed": [
+        {
+          "label": "DATE",
+          "value": "25/12/1990"
+        },
+        {
+          "label": "GIVENNAME",
+          "value": "Jaclyn"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Turchany"
+        },
+        {
+          "label": "EMAIL",
+          "value": "VA1951@tutanota.com"
+        }
+      ]
+    },
+    {
+      "source_text": "Dear Miss Visali Naëlla Imsafarne Battistoni,\n\nWe are excited to invite you to our upcoming Career Advancement Workshop series, scheduled to begin on May/59 at our downtown campus located at 816 Farm-to-Market 1147, Itasca – ZIP 37074.\nThe program will cover résumé optimization, interview techniques, and personal branding, and each session will be led by industry experts such as Anne-Solène Ras-Work Maey El Bahraoui, who holds a master's degree in Human Resources and has over 31 years of experience.\nPlease confirm your attendance by emailing 9NB@tutanota.com no later than 24/11/1960 and provide your 5935803720 for registration purposes.\nIf you have any accessibility requirements, let us know via phone at 0057-27.468.6025 so we can make appropriate accommodations.\nWe look forward to supporting your professional growth and helping you achieve your next career milestone.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Visali Naëlla"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Imsafarne Battistoni"
+        },
+        {
+          "label": "DATE",
+          "value": "May/59"
+        },
+        {
+          "label": "STREET",
+          "value": "Farm-to-Market 1147"
+        },
+        {
+          "label": "CITY",
+          "value": "Itasca"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "37074"
+        },
+        {
+          "label": "GIVENNAME",
+          "value": "Anne-Solène"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Ras-Work Maey El Bahraoui"
+        },
+        {
+          "label": "EMAIL",
+          "value": "9NB@tutanota.com"
+        },
+        {
+          "label": "DATE",
+          "value": "24/11/1960"
+        },
+        {
+          "label": "IDCARDNUM",
+          "value": "5935803720"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "0057-27.468.6025"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Visali Naëlla\"},{\"label\":\"SURNAME\",\"value\":\"Imsafarne Battistoni\"},{\"label\":\"DATE\",\"value\":\"May/59\"},{\"label\":\"STREET\",\"value\":\"Farm-to-Market 1147\"},{\"label\":\"CITY\",\"value\":\"Itasca\"},{\"label\":\"ZIPCODE\",\"value\":\"37074\"},{\"label\":\"GIVENNAME\",\"value\":\"Anne-Solène Ras-Work Maey\"},{\"label\":\"SURNAME\",\"value\":\"El Bahraoui\"},{\"label\":\"EMAIL\",\"value\":\"9NB@tutanota.com\"},{\"label\":\"DATE\",\"value\":\"24/11/1960\"},{\"label\":\"TELEPHONENUM\",\"value\":\"5935803720\"},{\"label\":\"TELEPHONENUM\",\"value\":\"0057-27.468.6025\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Visali Naëlla"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Imsafarne Battistoni"
+        },
+        {
+          "label": "DATE",
+          "value": "May/59"
+        },
+        {
+          "label": "STREET",
+          "value": "Farm-to-Market 1147"
+        },
+        {
+          "label": "CITY",
+          "value": "Itasca"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "37074"
+        },
+        {
+          "label": "GIVENNAME",
+          "value": "Anne-Solène Ras-Work Maey"
+        },
+        {
+          "label": "SURNAME",
+          "value": "El Bahraoui"
+        },
+        {
+          "label": "EMAIL",
+          "value": "9NB@tutanota.com"
+        },
+        {
+          "label": "DATE",
+          "value": "24/11/1960"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "5935803720"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "0057-27.468.6025"
+        }
+      ]
+    },
+    {
+      "source_text": "A reminder will be sent to Madhusudhan Tse at GP@hotmail.com one day prior to the session scheduled at Old Sherborne Road 30, Newtonmore PR3 2WH.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Madhusudhan Tse"
+        },
+        {
+          "label": "EMAIL",
+          "value": "GP@hotmail.com"
+        },
+        {
+          "label": "STREET",
+          "value": "Old Sherborne Road"
+        },
+        {
+          "label": "CITY",
+          "value": "Newtonmore"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "PR3 2WH"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Madhusudhan\"},{\"label\":\"SURNAME\",\"value\":\"Tse\"},{\"label\":\"EMAIL\",\"value\":\"GP@hotmail.com\"},{\"label\":\"STREET\",\"value\":\"Old Sherborne Road\"},{\"label\":\"CITY\",\"value\":\"Newtonmore\"},{\"label\":\"ZIPCODE\",\"value\":\"PR3 2WH\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Madhusudhan"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Tse"
+        },
+        {
+          "label": "EMAIL",
+          "value": "GP@hotmail.com"
+        },
+        {
+          "label": "STREET",
+          "value": "Old Sherborne Road"
+        },
+        {
+          "label": "CITY",
+          "value": "Newtonmore"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "PR3 2WH"
+        }
+      ]
+    },
+    {
+      "source_text": "Chat Transcript – Telehealth Support (Patient & Nurse)\n\nNurse: Good morning, Mensud Barrocu. I hope you are feeling comfortable today. Could you let me know if you have experienced any new symptoms since our last video call?\n\nPatient: Hello, yes, I’ve had some increased shortness of breath during the night and I’m a bit more fatigued than usual. My caregiver can be reached at 000.635-6255 if you need to discuss medication adjustments.\n\nNurse: Thank you for sharing that. I will schedule a follow‑up video session for tomorrow and will send the link to your email (inargüna@protonmail.com). In the meantime, please keep a log of your pain levels and any medication taken.\n\nPatient: Will do. I also wanted to confirm that my address details are still correct: 171 Aykar Vihar Road, Kadi – 508101.\n\nNurse: All set. I will also update your chart with the latest lab results we received on October 13th, 1966 and share the summary after the call.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Mensud"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Barrocu"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "000.635-6255"
+        },
+        {
+          "label": "EMAIL",
+          "value": "inargüna@protonmail.com"
+        },
+        {
+          "label": "STREET",
+          "value": "Aykar Vihar Road"
+        },
+        {
+          "label": "CITY",
+          "value": "Kadi"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "508101"
+        },
+        {
+          "label": "DATE",
+          "value": "October 13th, 1966"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Mensud\"},{\"label\":\"SURNAME\",\"value\":\"Barrocu\"},{\"label\":\"TELEPHONENUM\",\"value\":\"000.635-6255\"},{\"label\":\"EMAIL\",\"value\":\"inargüna@protonmail.com\"},{\"label\":\"STREET\",\"value\":\"Aykar Vihar Road\"},{\"label\":\"CITY\",\"value\":\"Kadi\"},{\"label\":\"ZIPCODE\",\"value\":\"508101\"},{\"label\":\"DATE\",\"value\":\"October 13th, 1966\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Mensud"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Barrocu"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "000.635-6255"
+        },
+        {
+          "label": "EMAIL",
+          "value": "inargüna@protonmail.com"
+        },
+        {
+          "label": "STREET",
+          "value": "Aykar Vihar Road"
+        },
+        {
+          "label": "CITY",
+          "value": "Kadi"
+        },
+        {
+          "label": "ZIPCODE",
+          "value": "508101"
+        },
+        {
+          "label": "DATE",
+          "value": "October 13th, 1966"
+        }
+      ]
+    },
+    {
+      "source_text": "Feedback Form – Stage Presence Session\nName: Zameer Jean-Brice Grube\nTitle: Madame\nAge: 53\nSex: M | Gender: Non-binary\nEmail: S@tutanota.com\nPhone: +7041809.8402\nDriver’s License No.: YJSEUV01LE\nPassport No.: ZV4330919\nTax ID: 0742670123\nSocial Security No.: 9959945243\nPreferred Session Date: February 4th, 1976\nComments (briefly describe your confidence boost): ___________________________\nSignature: _______________________   Date: 1937-10-20T00:00:00",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Zameer Jean-Brice"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Grube"
+        },
+        {
+          "label": "EMAIL",
+          "value": "S@tutanota.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+7041809.8402"
+        },
+        {
+          "label": "TAXNUM",
+          "value": "0742670123"
+        },
+        {
+          "label": "SOCIALNUM",
+          "value": "9959945243"
+        },
+        {
+          "label": "DATE",
+          "value": "February 4th, 1976"
+        },
+        {
+          "label": "DATE",
+          "value": "1937-10-20T00:00:00"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Zameer Jean-Brice\"},{\"label\":\"SURNAME\",\"value\":\"Grube\"},{\"label\":\"EMAIL\",\"value\":\"S@tutanota.com\"},{\"label\":\"TELEPHONENUM\",\"value\":\"+7041809.8402\"},{\"label\":\"TAXNUM\",\"value\":\"0742670123\"},{\"label\":\"SOCIALNUM\",\"value\":\"9959945243\"},{\"label\":\"DATE\",\"value\":\"February 4th, 1976\"},{\"label\":\"DATE\",\"value\":\"1937-10-20T00:00:00\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Zameer Jean-Brice"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Grube"
+        },
+        {
+          "label": "EMAIL",
+          "value": "S@tutanota.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+7041809.8402"
+        },
+        {
+          "label": "TAXNUM",
+          "value": "0742670123"
+        },
+        {
+          "label": "SOCIALNUM",
+          "value": "9959945243"
+        },
+        {
+          "label": "DATE",
+          "value": "February 4th, 1976"
+        },
+        {
+          "label": "DATE",
+          "value": "1937-10-20T00:00:00"
+        }
+      ]
+    },
+    {
+      "source_text": "The follow‑up email to collaborators reads: “Hi Nevruz Abdel-Baseir Tankeu Osseni, thanks for confirming your participation. Please reply to this address (M05@outlook.com) with any special equipment requests by 2016-11-25T00:00:00.” It also reminds them to pack lightweight rain‑gear.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Nevruz"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Abdel-Baseir Tankeu Osseni"
+        },
+        {
+          "label": "EMAIL",
+          "value": "M05@outlook.com"
+        },
+        {
+          "label": "DATE",
+          "value": "2016-11-25T00:00:00"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Nevruz Abdel-Baseir Tankeu\"},{\"label\":\"SURNAME\",\"value\":\"Osseni\"},{\"label\":\"EMAIL\",\"value\":\"M05@outlook.com\"},{\"label\":\"DATE\",\"value\":\"2016-11-25T00:00:00\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Nevruz Abdel-Baseir Tankeu"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Osseni"
+        },
+        {
+          "label": "EMAIL",
+          "value": "M05@outlook.com"
+        },
+        {
+          "label": "DATE",
+          "value": "2016-11-25T00:00:00"
+        }
+      ]
+    },
+    {
+      "source_text": "Hon Yassine Layann Kagame logged that Sarune Yaél Godwin (DOB: June/84, Age: 44, Sex: O) completed a 100 kg bench‑press on 1954-02-20T00:00:00 at the King City weightlifting club, and the record was sent to the admin at badriskandar@tutanota.com or via phone +258-85-158 6102.",
+      "gold": [
+        {
+          "label": "GIVENNAME",
+          "value": "Yassine Layann"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Kagame"
+        },
+        {
+          "label": "GIVENNAME",
+          "value": "Sarune Yaél"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Godwin"
+        },
+        {
+          "label": "DATE",
+          "value": "June/84"
+        },
+        {
+          "label": "DATE",
+          "value": "1954-02-20T00:00:00"
+        },
+        {
+          "label": "CITY",
+          "value": "King City"
+        },
+        {
+          "label": "EMAIL",
+          "value": "badriskandar@tutanota.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+258-85-158 6102"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"GIVENNAME\",\"value\":\"Yassine Layann\"},{\"label\":\"SURNAME\",\"value\":\"Kagame\"},{\"label\":\"GIVENNAME\",\"value\":\"Sarune Yaél\"},{\"label\":\"SURNAME\",\"value\":\"Godwin\"},{\"label\":\"DATE\",\"value\":\"June/84\"},{\"label\":\"DATE\",\"value\":\"1954-02-20T00:00:00\"},{\"label\":\"CITY\",\"value\":\"King City\"},{\"label\":\"EMAIL\",\"value\":\"badriskandar@tutanota.com\"},{\"label\":\"TELEPHONENUM\",\"value\":\"+258-85-158 6102\"}]}",
+      "parsed": [
+        {
+          "label": "GIVENNAME",
+          "value": "Yassine Layann"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Kagame"
+        },
+        {
+          "label": "GIVENNAME",
+          "value": "Sarune Yaél"
+        },
+        {
+          "label": "SURNAME",
+          "value": "Godwin"
+        },
+        {
+          "label": "DATE",
+          "value": "June/84"
+        },
+        {
+          "label": "DATE",
+          "value": "1954-02-20T00:00:00"
+        },
+        {
+          "label": "CITY",
+          "value": "King City"
+        },
+        {
+          "label": "EMAIL",
+          "value": "badriskandar@tutanota.com"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "+258-85-158 6102"
+        }
+      ]
+    },
+    {
+      "source_text": "Finally, the closing ceremony on 1964-09-14T00:00:00 at the venue on 42 Upper South Wraxall, Manchester will feature a parade of cultural groups; participants are asked to wear traditional attire reflecting their Two-spirit identity and to provide a backup payment method such as a 2204518335642339 for any on‑site purchases, while organisers will keep a record of each guest's 123.271.5915 for post‑event evaluation.",
+      "gold": [
+        {
+          "label": "DATE",
+          "value": "1964-09-14T00:00:00"
+        },
+        {
+          "label": "STREET",
+          "value": "Upper South Wraxall"
+        },
+        {
+          "label": "CITY",
+          "value": "Manchester"
+        },
+        {
+          "label": "CREDITCARDNUMBER",
+          "value": "2204518335642339"
+        },
+        {
+          "label": "SOCIALNUM",
+          "value": "123.271.5915"
+        }
+      ],
+      "raw": "{\"entities\":[{\"label\":\"DATE\",\"value\":\"1964-09-14T00:00:00\"},{\"label\":\"STREET\",\"value\":\"Upper South Wraxall\"},{\"label\":\"CITY\",\"value\":\"Manchester\"},{\"label\":\"CREDITCARDNUMBER\",\"value\":\"2204518335642339\"},{\"label\":\"TELEPHONENUM\",\"value\":\"123.271.5915\"}]}",
+      "parsed": [
+        {
+          "label": "DATE",
+          "value": "1964-09-14T00:00:00"
+        },
+        {
+          "label": "STREET",
+          "value": "Upper South Wraxall"
+        },
+        {
+          "label": "CITY",
+          "value": "Manchester"
+        },
+        {
+          "label": "CREDITCARDNUMBER",
+          "value": "2204518335642339"
+        },
+        {
+          "label": "TELEPHONENUM",
+          "value": "123.271.5915"
+        }
+      ]
+    }
+  ]
+}
