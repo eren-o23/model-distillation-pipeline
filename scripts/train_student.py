@@ -380,9 +380,22 @@ def main() -> None:
         print(f"  full run, {n_ep} epochs: {total:.1f}h  ({fits})", flush=True)
 
     print(f"\nbest epoch: {best['epoch']} at micro-F1 {best['f1']:.3f}")
+    # Record the library versions the run actually used. requirements-train.txt pins lower bounds, so
+    # pip resolves whatever is current that day — and rank 8 and rank 32 were trained days apart. A
+    # comparison whose whole claim is "only the rank differs" has to be able to show that, or state
+    # plainly that it cannot.
+    import importlib.metadata as md
+
+    versions = {}
+    for pkg in ("torch", "transformers", "peft", "bitsandbytes", "accelerate"):
+        try:
+            versions[pkg] = md.version(pkg)
+        except md.PackageNotFoundError:
+            versions[pkg] = "absent"
+
     (RAW / f"{name}-summary.json").write_text(json.dumps(
         {"config": vars(args), "best": best, "sec_per_step": sec_per_step,
-         "train_runtime_s": result.metrics["train_runtime"]}, indent=2))
+         "train_runtime_s": result.metrics["train_runtime"], "versions": versions}, indent=2))
 
     if not args.no_push and not args.limit and best.get("dir"):
         from huggingface_hub import HfApi
