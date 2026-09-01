@@ -2,7 +2,7 @@
 
 **Student:** `Qwen3-8B` + QLoRA (4-bit NF4), trained on 7,842 teacher-generated examples.
 **Hardware:** Kaggle 2xT4 (sm_75) — fp16, no bf16, no FlashAttention-2 (D-019).
-**Measured:** 2026-08-27 against dataset **gold** on the **val** split — every model in the headline
+**Measured:** 2026-09-01 against dataset **gold** on the **val** split — every model in the headline
 table on the same 200 rows the teacher ceiling was measured on (D-021).
 **The test split was not touched.** Phase 3 never passes `allow_test=True`.
 **API spend: $0.** Training and evaluation are entirely local to Kaggle's free tier.
@@ -37,7 +37,7 @@ and can in principle exceed it.
 
 **`r8` peaked at epoch 1 and declined after it** (0.829 → 0.822). The curve turning over is the overfitting point the spec warns about — found, not assumed. It also means the epoch budget was never the binding constraint on quality, so D-024's choice of 2 epochs on compute grounds cost nothing here.
 
-## Rank 8 vs rank 32
+## rank 8
 
 | config | trainable params | best epoch | micro-F1 | train time |
 |---|---|---|---|---|

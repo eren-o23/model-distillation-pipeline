@@ -60,7 +60,11 @@ def main() -> None:
     teacher = teacher_score()
     t_f1 = teacher.micro.f1
     b_short, b_teacher = load("baseline-short"), load("baseline-teacher")
-    runs = {c: epochs(c) for c in ("r8", "r32") if epochs(c)}
+    # Discover configs from the files rather than hardcoding ranks. Which second rank got trained is a
+    # hardware outcome, not a constant: rank 32 would not fit alongside batch 4 on a 14.56GiB T4 (D-026).
+    configs = sorted({p.stem.split("-epoch")[0] for p in RAW.glob("r*-epoch*.json")},
+                     key=lambda c: int(c[1:]))
+    runs = {c: epochs(c) for c in configs if epochs(c)}
     summaries = {c: load(f"{c}-summary") for c in runs}
     if not runs:
         sys.exit("no per-epoch results found — nothing to report yet")
@@ -113,6 +117,7 @@ def main() -> None:
     inherited = [lbl for lbl in ("IDCARDNUM", "GIVENNAME", "SURNAME")
                  if lbl in headline["per_label"] and headline["per_label"][lbl]["f1"] < 0.75]
 
+    rank_heading = " vs ".join(f"rank {c[1:]}" for c in runs) or "Configurations"
     gpu_hours = {c: (s or {}).get("train_runtime_s", 0) / 3600 for c, s in summaries.items()}
 
     # Whether the val curve turned over is the one thing the per-epoch table shows but does not say. It
@@ -176,7 +181,7 @@ and can in principle exceed it.
 
 {epoch_notes}
 
-## Rank 8 vs rank 32
+## {rank_heading}
 
 | config | trainable params | best epoch | micro-F1 | train time |
 |---|---|---|---|---|

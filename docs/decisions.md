@@ -508,3 +508,30 @@ autocast fixes it and has the independent merit of putting eval in the same prec
 **Revisit if:** loss goes unstable or NaN — measured across four runs it did not, holding at 0.158 with
 grad-norm 0.318 — or the student is swapped for a model with a small vocabulary, where the whole trade is
 worth far less.
+
+---
+
+## D-026 · Second configuration is rank 16, not rank 32
+
+**Date:** 2026-09-01
+**Chose:** LoRA rank 16 as the second configuration, at the same batch 4 x accum 4 as rank 8.
+**Over:** the rank 32 the Phase 3 plan named.
+**Why:** Rank 32 does not fit. Its adapter is 87M parameters against rank 8's 21.8M, so gradients and
+optimiser state add ~900MB on top of a rank-8 run that already peaked at **12.13 of 14.56 GiB**. It trained
+55 steps and then met a batch containing one of the long sequences — where the loss materialises a
+`batch x seq x 151,936` logits tensor — and asked for **1.93 GiB with 1.86 GiB free**. Short by ~70MB.
+
+The decisive point is what the alternative would have cost. An effective batch of 16 only factors as 4x4 or
+2x8, so running rank 32 means dropping to per-device batch 2. That changes fp16 loss scaling and gradient
+accumulation dynamics alongside the rank, and the comparison the spec asks for — *a real trade-off between
+two configurations* — stops being about rank at all. **Rank 16 at batch 4 is a cleaner rank-vs-rank
+comparison than rank 32 at batch 2 could be**, because rank genuinely is the only thing that differs.
+
+Rank 16 also fits the measured envelope: ~43M parameters adds ~450MB over rank 8, leaving ~2GB of margin
+against the spike that killed rank 32. The spec's wording is "for example LoRA rank eight against rank
+thirty-two", so 8 vs 16 satisfies it.
+**Cost, stated plainly:** 8 vs 16 is a 2x capacity spread rather than 4x, so the trade-off it demonstrates
+is narrower. If the two land within noise of each other, that is a weaker result than 8 vs 32 would have
+given, and the report has to say the spread was constrained by VRAM rather than chosen.
+**Revisit if:** training moves to a card with more than 16GB, where rank 32 fits at batch 4 and the original
+comparison becomes available.
