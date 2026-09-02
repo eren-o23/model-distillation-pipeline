@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.pii.data import DATA_DIR, template_key  # noqa: E402
@@ -52,10 +54,18 @@ def test_sft_example_round_trips_through_the_teacher_parser():
 
 
 def test_no_test_split_uid_leaks_into_the_teacher_run():
-    """Cheap insurance on the sealed test set. Skips until the generation run has produced its log."""
-    raw = RAW_LOG
-    if not raw.exists():
-        return
-    test_uids = {json.loads(line)["uid"] for line in (DATA_DIR / "test.jsonl").open()}
-    used = {json.loads(line)["uid"] for line in raw.open()}
+    """Cheap insurance on the sealed test set.
+
+    Needs both halves of the comparison, and they have different lifetimes: the teacher log is committed,
+    while `data/*.jsonl` is gitignored. On Kaggle the log therefore exists and the sealed split does not,
+    so checking only the log — as this did — turned a missing precondition into a failure.
+
+    Skipping rather than returning, so a run where this check did not happen says so instead of reporting
+    a pass it never earned.
+    """
+    test_split = DATA_DIR / "test.jsonl"
+    if not RAW_LOG.exists() or not test_split.exists():
+        pytest.skip("needs the teacher log and the sealed test split; the split is absent by design on Kaggle")
+    test_uids = {json.loads(line)["uid"] for line in test_split.open()}
+    used = {json.loads(line)["uid"] for line in RAW_LOG.open()}
     assert not (used & test_uids), "test split must never be sent to the teacher"

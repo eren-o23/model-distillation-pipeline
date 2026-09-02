@@ -1,0 +1,30 @@
+{
+  "config": {
+    "rank": 16,
+    "baseline": null,
+    "eval_adapter": null,
+    "eval_n": 200,
+    "epochs": 2,
+    "limit": null,
+    "lr": 0.0002,
+    "batch": 4,
+    "accum": 4,
+    "resume": false,
+    "out": "/kaggle/working/phase3",
+    "no_push": false
+  },
+  "best": {
+    "f1": 0.8234368855682266,
+    "epoch": 2,
+    "dir": "/kaggle/working/phase3/r16/epoch2"
+  },
+  "sec_per_step": 25.543264765784116,
+  "train_runtime_s": 26095.986,
+  "versions": {
+    "torch": "2.10.0+cu128",
+    "transformers": "5.0.0",
+    "peft": "0.19.1",
+    "bitsandbytes": "0.50.2",
+    "accelerate": "1.13.0"
+  }
+}

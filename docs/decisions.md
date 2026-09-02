@@ -361,3 +361,199 @@ record carries `Sex: M` alongside `Gender Identity: Two-spirit`, so they encode 
 merging them would have destroyed a real distinction.
 **Revisit if:** the label set is widened to all 20 classes, at which point this becomes live again and the
 student's confusion matrix between the two is worth checking specifically.
+
+---
+
+## D-019 · fp16 and SDPA, because the T4 is sm_75
+
+**Date:** 2026-08-25
+**Chose:** `fp16=True`, gradient checkpointing (non-reentrant), SDPA attention.
+**Over:** the bf16 + FlashAttention-2 recipe every current QLoRA tutorial ships.
+**Why:** Kaggle's T4s are compute capability 7.5. bf16 needs Ampere (8.0+) and FlashAttention-2 needs Ampere
+too; both fail at *model load*, before a single step, so a copied recipe does not degrade — it simply does
+not run. Non-reentrant checkpointing is the third piece: the reentrant path does not see LoRA parameters as
+requiring grad and dies with "none of the inputs have requires\_grad". The script asserts the compute
+capability up front and prints which path it took, so this is a sentence rather than a traceback.
+**Cost:** fp16 needs loss scaling and is slightly less numerically forgiving than bf16, and the lack of FA2
+costs attention throughput at these sequence lengths. Both are accepted in exchange for a $0 training bill.
+**Revisit if:** training moves to a rented Ampere GPU, which would also settle the Phase 5 serving question.
+
+---
+
+## D-020 · `lora_alpha = 2 × rank`, so rank is the only variable
+
+**Date:** 2026-08-25
+**Chose:** alpha 16 at rank 8, alpha 64 at rank 32.
+**Over:** the common default of a fixed `lora_alpha=16` across both configurations.
+**Why:** PEFT scales the adapter update by `alpha / r`. Holding alpha fixed while rank moves from 8 to 32
+therefore cuts the effective update size by 4x at the same time as it quadruples capacity, and the two
+effects land in opposite directions. A result from that comparison could not distinguish "rank 32 has more
+capacity" from "rank 32 was effectively trained at a quarter of the learning rate" — which would make the
+spec's requested trade-off unreadable. Tying alpha to rank holds the scaling constant at 2.0 and leaves
+adapter capacity as the single difference.
+**Revisit if:** a rank sweep is ever run for absolute quality rather than for a two-point comparison, where
+tuning alpha per rank is legitimate.
+
+---
+
+## D-021 · Per-epoch eval on 200 rows; the full 1,000 only on the final pick
+
+**Date:** 2026-08-25
+**Chose:** score the first 200 val rows after each epoch, and all 1,000 once on the selected adapter.
+**Over:** the full 1,000-row val set at every epoch.
+**Why:** Generation, not training, is the expensive half of an eval on a 4-bit 8B on a T4. Six full evals
+across two configurations would cost more GPU-hours than the training runs they are meant to monitor, inside
+a ~30h weekly quota. 200 is also the exact n the teacher ceiling was measured at, so the student's per-epoch
+curve and the teacher's 0.832 sit on one axis without a sample-size caveat between them.
+**Also chose:** select the best checkpoint by **val micro-F1, not val loss**. They disagree, and F1 is the
+number the project reports; picking on loss would optimise a proxy.
+**Cost:** ±~0.03 F1 of sampling noise on the per-epoch curve. Acceptable for choosing an epoch, which is why
+the headline number is re-measured on all 1,000.
+**Revisit if:** the two configurations land within noise of each other, in which case the tie is broken on
+the full val set rather than on 200 rows.
+
+---
+
+## D-022 · `enable_thinking=False`, frozen in one function and asserted by test
+
+**Date:** 2026-08-25
+**Chose:** all prompt rendering goes through `student.render_prompt`, which passes `enable_thinking=False`.
+**Over:** calling `apply_chat_template` at each site, which is what every example does.
+**Why:** Qwen3 is a hybrid reasoning model and its template is inconsistent in a way that defeats the obvious
+code. Measured directly:
+
+| call | think block |
+|---|---|
+| `add_generation_prompt=True`, flag unset | **absent** |
+| `add_generation_prompt=True, enable_thinking=False` | **present** — `<think>\n\n</think>\n\n` |
+| a full conversation with an assistant turn, any flag | **always present** |
+
+Training renders the third form, so an empty think block precedes every training answer. Serving via the
+default renders the first, and the student is handed a prefix it has never seen. Nothing raises; the model
+just scores lower, and the evidence points at the fine-tune rather than at the plumbing. This is the same
+class of failure as D-013 — a generation-time flag on a reasoning model silently invalidating a measurement —
+found before it cost anything this time rather than after.
+**Consequence:** `render_prompt` is the only renderer, and `tests/test_prompt_render.py` asserts against the
+real tokenizer that prompt + completion reconstructs the training render exactly. `transformers` and `jinja2`
+were added to `requirements.txt` (tokenizer only, no torch) specifically so that check runs locally in
+seconds instead of five hours into a Kaggle session.
+**Revisit if:** the student is ever swapped for a non-Qwen base, where the template's behaviour must be
+re-measured rather than assumed to match.
+
+---
+
+## D-023 · Plain HF `Trainer` with explicit label masking, not TRL
+
+**Date:** 2026-08-25
+**Chose:** `transformers.Trainer`, tokenising prompt and completion separately and setting `labels = -100`
+across the prompt.
+**Over:** `trl.SFTTrainer`, the standard tool for exactly this job.
+**Why:** The one feature TRL is wanted for here does not work on this model. `assistant_only_loss=True`
+requires the chat template to declare `{% generation %}` markers; Qwen3's template has none — checked, not
+assumed — so it raises rather than falling back. The older `DataCollatorForCompletionOnlyLM` matches on a
+response-template *string* and has churned repeatedly across TRL releases. The explicit version is about ten
+lines, and separating the halves is provably safe: over 500 rows, tokenising prompt and completion
+separately gives token-for-token the same ids as tokenising them joined.
+**Also buys:** the masking is inspectable. Measured on real rows, only 33% of tokens are answer, so the mask
+is not a detail — training on the full sequence would spend two thirds of the gradient teaching the model to
+reproduce a system prompt it is given for free at inference.
+**Revisit if:** Qwen ships a template with generation markers, or the training loop needs something TRL
+provides and this does not (packing, DPO, or a reward model).
+
+---
+
+## D-024 · Two epochs, chosen on measured throughput
+
+**Date:** 2026-08-26
+**Chose:** 2 epochs per configuration, per-device batch 4 x grad-accum 4 (effective 16).
+**Over:** the 3 epochs the Phase 3 plan assumed.
+**Why:** Measured on the target hardware rather than estimated. At **24.44 s/step** a 3-epoch run over
+7,842 examples is **10.5h**, past Kaggle's ~9h session cap, so it could only complete by resuming across
+two sessions. 2 epochs is **7.0h** and finishes unattended in one, which takes the least-tested code in the
+phase — the resume path — off the critical path for both configurations.
+
+The epoch count is not a stopping decision that can be deferred: `lr_scheduler_type="cosine"` decays over
+the declared total, so a 3-epoch schedule halted at epoch 2 leaves the model mid-decay at a still-high LR
+and is strictly worse than a 2-epoch schedule that completes. The number has to be committed up front.
+
+Supporting evidence that epoch 3 was unlikely to pay: a single epoch over a **256-example** subset (16
+optimizer steps) already reached **0.692 micro-F1** against the teacher's 0.832, at 0.5% schema-invalid,
+with `EMAIL` 0.989 and `TELEPHONENUM` 0.898. Training loss was 0.158. The capability transfers fast, and
+the spec's own guidance is to watch for overfitting after two or three epochs, not to assume three helps.
+**Cost, stated plainly:** if the epoch-1 to epoch-2 curve is still climbing, this leaves quality on the
+table and the report must say so rather than presenting 2 as optimal. The per-epoch val curve is what
+shows whether that happened.
+**Revisit if:** the two-epoch curves are still rising at the end, in which case a 3-epoch run is worth
+21h of quota across two sessions — or training moves to a GPU where 3 epochs fits a single session.
+
+---
+
+## D-025 · The frozen embedding and output head stay in fp16
+
+**Date:** 2026-08-26
+**Chose:** recast non-trainable fp32 tensors over 100M parameters back to fp16 after
+`prepare_model_for_kbit_training`, and run generation under `torch.autocast`.
+**Over:** accepting PEFT's blanket fp32 upcast.
+**Why:** The upcast exists so fp16 training stays numerically stable, and for layer norms that is right and
+nearly free. For Qwen3's **151,936-token vocabulary** it is neither: `embed_tokens` and `lm_head` are ~622M
+parameters each, and upcasting them cost **2.32GiB of a 14.56GiB card** — measured, resident went 5.66 to
+7.98 GiB. Neither tensor is trained here (LoRA targets only the attention and MLP projections), so neither
+carries an optimiser state or receives a gradient, and the precision buys nothing.
+**Effect:** per-device batch 4 became affordable where it had OOMed, taking training from 39.79 to 24.44
+s/step — **1.63x**, and the difference between a run that fits a Kaggle session and one that does not.
+**Consequence:** the recast exposed a latent dtype mismatch. Layer norms remain fp32 by design, so the final
+norm emits an fp32 activation into an fp16 output projection. Training never hit it because AMP inserts the
+cast; generation under `no_grad` did, raising `expected scalar type Float but found Half`. Generating under
+autocast fixes it and has the independent merit of putting eval in the same precision regime as training.
+**Revisit if:** loss goes unstable or NaN — measured across four runs it did not, holding at 0.158 with
+grad-norm 0.318 — or the student is swapped for a model with a small vocabulary, where the whole trade is
+worth far less.
+
+---
+
+## D-026 · Second configuration is rank 16, not rank 32
+
+**Date:** 2026-09-01
+**Chose:** LoRA rank 16 as the second configuration, at the same batch 4 x accum 4 as rank 8.
+**Over:** the rank 32 the Phase 3 plan named.
+**Why:** Rank 32 does not fit. Its adapter is 87M parameters against rank 8's 21.8M, so gradients and
+optimiser state add ~900MB on top of a rank-8 run that already peaked at **12.13 of 14.56 GiB**. It trained
+55 steps and then met a batch containing one of the long sequences — where the loss materialises a
+`batch x seq x 151,936` logits tensor — and asked for **1.93 GiB with 1.86 GiB free**. Short by ~70MB.
+
+The decisive point is what the alternative would have cost. An effective batch of 16 only factors as 4x4 or
+2x8, so running rank 32 means dropping to per-device batch 2. That changes fp16 loss scaling and gradient
+accumulation dynamics alongside the rank, and the comparison the spec asks for — *a real trade-off between
+two configurations* — stops being about rank at all. **Rank 16 at batch 4 is a cleaner rank-vs-rank
+comparison than rank 32 at batch 2 could be**, because rank genuinely is the only thing that differs.
+
+Rank 16 also fits the measured envelope: ~43M parameters adds ~450MB over rank 8, leaving ~2GB of margin
+against the spike that killed rank 32. The spec's wording is "for example LoRA rank eight against rank
+thirty-two", so 8 vs 16 satisfies it.
+**Cost, stated plainly:** 8 vs 16 is a 2x capacity spread rather than 4x, so the trade-off it demonstrates
+is narrower. If the two land within noise of each other, that is a weaker result than 8 vs 32 would have
+given, and the report has to say the spread was constrained by VRAM rather than chosen.
+**Revisit if:** training moves to a card with more than 16GB, where rank 32 fits at batch 4 and the original
+comparison becomes available.
+
+---
+
+## D-027 · The rank comparison is a null result, and is reported as one
+
+**Date:** 2026-09-02
+**Chose:** Report rank 8 vs rank 16 as *not separable*, and select rank 8 on cost rather than on quality.
+**Over:** presenting rank 8's higher number as a win.
+**Why:** rank 8 scored 0.829 and rank 16 scored 0.823 on the same 200 val rows. That 0.005 gap sits against a
+standard error of about **0.011** on 1,283 scored entities, so the two configurations are statistically
+indistinguishable. Reading the ordering as a result would have been the easiest way to overclaim in the whole
+phase — the numbers are right there and the higher one is tempting.
+**What the comparison actually shows:** doubling adapter capacity bought **nothing measurable**, while costing
+more memory (13.93 of 14.56 GiB peak at rank 16, against 12.13 at rank 8) and taking an extra epoch to reach
+the same place — rank 8 peaked at epoch 1, rank 16 at epoch 2. For a task this narrow, the smaller adapter is
+the right default, and rank 8 is selected because it is cheaper at equal quality.
+**Also worth stating:** this is a weaker spread than planned. D-026 cut the second configuration from rank 32
+to rank 16 on VRAM grounds, so the experiment covers a 2x capacity range rather than 4x. A 4x spread might
+have separated. `write_phase3.py` computes the standard error and the verdict from the saved measurements, so
+this cannot drift if the numbers are ever regenerated.
+**Revisit if:** Phase 4's sealed-test numbers separate the two, which would mean 200 val rows was simply too
+small a sample to resolve a real difference.

@@ -1,10 +1,10 @@
 # Model Distillation Pipeline
 
-Distilling a PII-detection capability from a large open-weight teacher into a 7B student, then benchmarking
+Distilling a PII-detection capability from a large open-weight teacher into an 8B student, then benchmarking
 the two on quality, cost, and latency to find the **break-even request volume** — the traffic level above
 which self-hosting the student beats paying per-token for the teacher.
 
-**Status:** Phase 2 of 5 complete — teacher ceiling established, training set generated. Fine-tuning next.
+**Status:** Phase 3 of 5 complete — the student matches the teacher at 0.833 micro-F1. Benchmarking next.
 
 ---
 
@@ -20,16 +20,42 @@ renting it** — including idle GPU time, and including the cost of escalating t
 | **Task** | PII entity detection over English text — 12 entity classes |
 | **Dataset** | [`ai4privacy/pii-masking-openpii-1.5m`](https://huggingface.co/datasets/ai4privacy/pii-masking-openpii-1.5m) (CC-BY-4.0) |
 | **Teacher** | Large open-weight Qwen model, served on Fireworks |
-| **Student** | `Qwen2.5-7B-Instruct` + QLoRA |
+| **Student** | `Qwen3-8B` + QLoRA (4-bit NF4), LoRA rank 8 |
 | **Metric** | Micro and per-label precision / recall / F1 on `(label, value)` pairs |
 
-Teacher and student are from the same model family on purpose: the comparison then isolates the effect of
-*scale*, rather than confounding it with tokenizer and pretraining differences.
+Teacher and student share a lineage but **not a generation** — Qwen3.7 was never released as open weights,
+so a true same-generation pair is impossible. The "isolates scale" claim was therefore dropped rather than
+quietly kept (D-011).
 
 ## Results
 
-**Phases 1–2 complete.** Teacher ceiling established and the training set generated; student benchmark and
-break-even volume land here next.
+**Phases 1–3 complete.** The 8B student **matches the teacher** on held-out validation, at roughly a
+quarter of the input tokens. The sealed test set and the break-even volume land here next.
+
+### The student ([reports/phase3.md](reports/phase3.md))
+
+| model | micro-F1 | schema-invalid |
+|---|---|---|
+| **teacher** `qwen3p7-plus` (API) | 0.832 | 0.0% |
+| untuned Qwen3-8B, ~60-token prompt | 0.656 | 0.5% |
+| untuned Qwen3-8B, teacher's ~475-token prompt | 0.725 | 0.5% |
+| **student** Qwen3-8B + QLoRA rank 8 | **0.833** | **0.0%** |
+
+The student is scored on all 1,000 validation rows, the teacher on 200 (D-021), so the two are not
+measured at equal precision — **matches** is the defensible claim, not *beats*. Phase 4 settles it on the
+sealed test set, where re-measuring the teacher at the same n costs about $0.24.
+
+Two baselines were measured before training, and they are what make the result readable. Fine-tuning is worth
+**+0.173** over the same model on the same short prompt. Prompting alone — handing the untuned model the
+teacher's full 475-token conventions — buys only +0.069, and costs 4x the input tokens every request. That
+gap is the evidence behind D-017, and it feeds the break-even number directly.
+
+Schema-invalid output fell from 0.5% to **0 in 1,000**. That is a reliability gain on top of accuracy, and it
+sets the floor for Phase 5's escalation rate.
+
+**Rank 8 against rank 16** is a null result, reported as one: 0.829 vs 0.823 on 200 rows, a 0.005 gap against
+a ~0.011 standard error. Twice the adapter capacity bought nothing measurable. Rank 32 was the planned second
+configuration but does not fit alongside batch 4 on a 16GB T4 (D-026).
 
 | | |
 |---|---|
@@ -45,6 +71,10 @@ the cost, so `qwen3p7-plus` won on economics.
 Strongest labels are `EMAIL` (1.000), `DATE` (0.983) and `TELEPHONENUM` (0.944). The ceiling is held down by
 `GIVENNAME`/`SURNAME` (~0.68), where the dataset's own given/family-name boundary is genuinely ambiguous on
 multicultural names, and by `IDCARDNUM` (0.377) — see the decision log for why that one resisted fixing.
+
+The student inherited that last one precisely: **`IDCARDNUM` at 0.901 precision but 0.285 recall** across
+1,000 rows. It learned to be conservative because the teacher taught it to be (D-015), which is the clearest
+concrete argument in the project for Phase 5's escalation path.
 
 ### Training set ([reports/phase2.md](reports/phase2.md))
 
@@ -79,6 +109,7 @@ demonstrated, and the break-even number is meaningless without it.
 | Phase 1 — teacher bake-off and ceiling | ~$1.50 |
 | — of which wasted on an invalidated run | ~$1.00 |
 | Phase 2 — 7,992 examples generated | **$3.52** |
+| Phase 3 — fine-tuning and evaluation | **$0.00** |
 | — projected beforehand | $3.77 |
 | — batch API alternative, declined | $1.76 |
 | **Total to date** | **~$5.02** |

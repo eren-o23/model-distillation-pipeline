@@ -1,0 +1,23 @@
+{
+  "config": {
+    "rank": 8,
+    "baseline": null,
+    "eval_adapter": null,
+    "eval_n": 200,
+    "epochs": 2,
+    "limit": null,
+    "lr": 0.0002,
+    "batch": 4,
+    "accum": 4,
+    "resume": false,
+    "out": "/kaggle/working/phase3",
+    "no_push": false
+  },
+  "best": {
+    "f1": 0.8286727057896809,
+    "epoch": 1,
+    "dir": "/kaggle/working/phase3/r8/epoch1"
+  },
+  "sec_per_step": 26.84370702647658,
+  "train_runtime_s": 27398.9203
+}
