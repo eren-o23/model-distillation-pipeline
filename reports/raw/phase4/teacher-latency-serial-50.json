@@ -1,0 +1,1204 @@
+{
+  "tag": "teacher-latency-serial-50",
+  "model": "accounts/fireworks/models/qwen3p7-plus",
+  "split": "test",
+  "split_sha256": "908f52f75ed401f112db462a740ee3e666b062e35042a999c2fde3eac3364eae",
+  "n": 50,
+  "workers": 1,
+  "date": "2026-09-02",
+  "uids": [
+    "21041495",
+    "20967823",
+    "21002477",
+    "21000945",
+    "20939005",
+    "21107444",
+    "20925104",
+    "21025885",
+    "20970213",
+    "20945021",
+    "20938905",
+    "20985965",
+    "21042671",
+    "21037924",
+    "21044967",
+    "20968763",
+    "20935671",
+    "21034773",
+    "20988795",
+    "21107726",
+    "21010301",
+    "21062784",
+    "20986604",
+    "20996813",
+    "20953439",
+    "24728893",
+    "21038171",
+    "20902920",
+    "20911849",
+    "21106207",
+    "20955002",
+    "20985420",
+    "20967519",
+    "20982534",
+    "21097807",
+    "24830608",
+    "20999704",
+    "20995188",
+    "21087035",
+    "20957071",
+    "20986967",
+    "24810574",
+    "21102316",
+    "21073256",
+    "21007272",
+    "21052427",
+    "21030052",
+    "21103250",
+    "24650351",
+    "24676057"
+  ],
+  "predictions": [
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Mathurin"
+      },
+      {
+        "label": "DATE",
+        "value": "09/06/1988"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "8279968768115668"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Sebehate"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "2602086287"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Leuard"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Romagnini"
+      },
+      {
+        "label": "DATE",
+        "value": "30/12/1976"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Cestari Bringel"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Marcacci"
+      },
+      {
+        "label": "DATE",
+        "value": "14/04/1981"
+      },
+      {
+        "label": "STREET",
+        "value": "Hever Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Tarporley"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "G62"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "160.042.6512"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "410462229"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "HULJU170021HN827"
+      }
+    ],
+    [],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Ashrije"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Nunziatini"
+      },
+      {
+        "label": "CITY",
+        "value": "Oakham Empingham"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "CB25 9NN"
+      },
+      {
+        "label": "DATE",
+        "value": "1956-12-27T00:00:00"
+      },
+      {
+        "label": "EMAIL",
+        "value": "10F@gmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+27 627979218"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Brunehilde"
+      },
+      {
+        "label": "STREET",
+        "value": "Skyline Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Arthur"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "S0G"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Luyeye"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Claud"
+      },
+      {
+        "label": "DATE",
+        "value": "11th April 2013"
+      },
+      {
+        "label": "STREET",
+        "value": "Lyndhurst Avenue"
+      },
+      {
+        "label": "CITY",
+        "value": "Goshen"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "48616"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Nyamatanga"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Rexhë"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Swyngedauw"
+      },
+      {
+        "label": "DATE",
+        "value": "12/08/1971"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Sanujan Viaan"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Memedovic"
+      },
+      {
+        "label": "STREET",
+        "value": "Factory Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Bengaluru"
+      },
+      {
+        "label": "DATE",
+        "value": "March 22nd, 1958"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "July 4th, 1998"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Bola"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Usellini"
+      },
+      {
+        "label": "STREET",
+        "value": "Six Hundreds Drove"
+      },
+      {
+        "label": "CITY",
+        "value": "Mirfield"
+      },
+      {
+        "label": "EMAIL",
+        "value": "penpalkov@aol.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Ayaat"
+      },
+      {
+        "label": "DATE",
+        "value": "16/02/1953"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "373837169304980"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Abishaa"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Gargitter"
+      },
+      {
+        "label": "CITY",
+        "value": "Spalding"
+      },
+      {
+        "label": "DATE",
+        "value": "May 19th, 1993"
+      },
+      {
+        "label": "DATE",
+        "value": "29/09/1950"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "345965410361426"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "July 28th, 2013"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "05 6985 8894"
+      },
+      {
+        "label": "DATE",
+        "value": "1987-12-27T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Marie-Line"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Saliuku"
+      },
+      {
+        "label": "CITY",
+        "value": "Hingna Mandavghorad"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Geta"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Benyezzar"
+      },
+      {
+        "label": "CITY",
+        "value": "Semiliguda"
+      },
+      {
+        "label": "DATE",
+        "value": "1983-06-18T00:00:00"
+      },
+      {
+        "label": "DATE",
+        "value": "11/01/1960"
+      },
+      {
+        "label": "EMAIL",
+        "value": "haouhammou@gmail.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Not Oumou Gawryjolek"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Walsh Salemink"
+      },
+      {
+        "label": "STREET",
+        "value": "Sodawas Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Ghansaur Nimbalia"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "394550"
+      },
+      {
+        "label": "DATE",
+        "value": "February/26"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Yesmin"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Damnjanovic"
+      },
+      {
+        "label": "EMAIL",
+        "value": "yll drihelsing@protonmail.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Kawther Percassi"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Culig"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "5424145051956384"
+      },
+      {
+        "label": "EMAIL",
+        "value": "ALKR1965@outlook.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+73 180825701"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Merdzivan Marinha"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Hokenmaier"
+      },
+      {
+        "label": "STREET",
+        "value": "Lane Number W 5"
+      },
+      {
+        "label": "CITY",
+        "value": "Chanditala-I"
+      }
+    ],
+    [
+      {
+        "label": "EMAIL",
+        "value": "johenhen@aol.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+44-84528 4449"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "ST6 6PH"
+      },
+      {
+        "label": "CITY",
+        "value": "Lancaster"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "1992-01-05T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Roswitta"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Akköprü"
+      },
+      {
+        "label": "EMAIL",
+        "value": "RKS23@gmail.com"
+      },
+      {
+        "label": "DATE",
+        "value": "17/11/1937"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+18.40.256-6483"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Edmona Anja-Maria"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Harris-Thanikkel"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Vitalijus"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Terpoorten"
+      },
+      {
+        "label": "DATE",
+        "value": "1963-11-13T00:00:00"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Puppi"
+      },
+      {
+        "label": "DATE",
+        "value": "1987-11-01T00:00:00"
+      },
+      {
+        "label": "DATE",
+        "value": "23/12/1985"
+      },
+      {
+        "label": "DATE",
+        "value": "1945-01-04T00:00:00"
+      },
+      {
+        "label": "STREET",
+        "value": "Indyk-Engel Way"
+      },
+      {
+        "label": "CITY",
+        "value": "Knights Landing"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "74467-7652"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+2 370.281.4333"
+      },
+      {
+        "label": "EMAIL",
+        "value": "FLR@aol.com"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Elisee"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Schräder Benlazrek"
+      }
+    ],
+    [
+      {
+        "label": "SOCIALNUM",
+        "value": "718981070"
+      },
+      {
+        "label": "DATE",
+        "value": "July/02"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "6245178650809508"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Clémentin"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Henningsen"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+44984-304 5656"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "4th July 1957"
+      },
+      {
+        "label": "STREET",
+        "value": "Ford Strathy Crescent"
+      },
+      {
+        "label": "CITY",
+        "value": "Lac Simon"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Noris"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Faia"
+      },
+      {
+        "label": "DATE",
+        "value": "26th May 1975"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Eljmaze"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Huseynzade"
+      },
+      {
+        "label": "DATE",
+        "value": "2010-11-04T00:00:00"
+      },
+      {
+        "label": "DATE",
+        "value": "2010-05-02T00:00:00"
+      },
+      {
+        "label": "EMAIL",
+        "value": "mohabustion@hotmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "02-5281.7891"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Jardena"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Yurtsever"
+      },
+      {
+        "label": "DATE",
+        "value": "01/06/1943"
+      },
+      {
+        "label": "CITY",
+        "value": "Mossleigh"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "N6B 3C7"
+      },
+      {
+        "label": "EMAIL",
+        "value": "L@yahoo.com"
+      }
+    ],
+    [
+      {
+        "label": "EMAIL",
+        "value": "30JB@outlook.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+181.147 690.1171"
+      }
+    ],
+    [
+      {
+        "label": "STREET",
+        "value": "South Walkers Mill Road"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "62650"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "23850029057"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "984 06 9900"
+      }
+    ],
+    [
+      {
+        "label": "SURNAME",
+        "value": "Bowers"
+      },
+      {
+        "label": "DATE",
+        "value": "April/06"
+      },
+      {
+        "label": "EMAIL",
+        "value": "R@tutanota.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Jan-Eric"
+      },
+      {
+        "label": "SURNAME",
+        "value": "El Maliki"
+      },
+      {
+        "label": "CITY",
+        "value": "Bedford"
+      },
+      {
+        "label": "CITY",
+        "value": "Little Staughton"
+      },
+      {
+        "label": "DATE",
+        "value": "June/16"
+      },
+      {
+        "label": "DATE",
+        "value": "12"
+      },
+      {
+        "label": "EMAIL",
+        "value": "ZNV@protonmail.com"
+      },
+      {
+        "label": "DATE",
+        "value": "February 22nd, 1959"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+441-86 151-1418"
+      },
+      {
+        "label": "STREET",
+        "value": "Buckingham Grove"
+      },
+      {
+        "label": "EMAIL",
+        "value": "amichimura@yahoo.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "08169.929199"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "4285983027"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Himë Klaudijo"
+      },
+      {
+        "label": "DATE",
+        "value": "2013-01-08T00:00:00"
+      },
+      {
+        "label": "EMAIL",
+        "value": "A@hotmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "0144.184 679-0792"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Deljin Schäppi Chirappurathu"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Silvestri"
+      },
+      {
+        "label": "DATE",
+        "value": "2000-08-29T00:00:00"
+      },
+      {
+        "label": "CITY",
+        "value": "Northampton"
+      },
+      {
+        "label": "EMAIL",
+        "value": "31L@gmail.com"
+      },
+      {
+        "label": "DATE",
+        "value": "December 23rd, 2025"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Selama Fastovsky Bohún Mc"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Clellan"
+      },
+      {
+        "label": "EMAIL",
+        "value": "11RA@outlook.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "0040.47 751 6621"
+      },
+      {
+        "label": "STREET",
+        "value": "Glendora Ridge Motorway"
+      },
+      {
+        "label": "CITY",
+        "value": "Lake Cormorant"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "91702"
+      },
+      {
+        "label": "DATE",
+        "value": "15th September 1968"
+      },
+      {
+        "label": "DATE",
+        "value": "2nd April 1963"
+      }
+    ],
+    [
+      {
+        "label": "STREET",
+        "value": "Old Toh Tuck Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Singapore"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "569976"
+      }
+    ],
+    [
+      {
+        "label": "IDCARDNUM",
+        "value": "026724735"
+      },
+      {
+        "label": "DATE",
+        "value": "4th March 1946"
+      },
+      {
+        "label": "EMAIL",
+        "value": "P01@yahoo.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "019982556.8203"
+      }
+    ],
+    [
+      {
+        "label": "CITY",
+        "value": "Nuneaton"
+      },
+      {
+        "label": "CITY",
+        "value": "Nailstone"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+4462 227-9594"
+      }
+    ],
+    [
+      {
+        "label": "TAXNUM",
+        "value": "79269-51291"
+      },
+      {
+        "label": "DATE",
+        "value": "July 13th, 1939"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Jaspreet Ruberintwari"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Gocki"
+      },
+      {
+        "label": "DATE",
+        "value": "12/08/1978"
+      }
+    ],
+    [
+      {
+        "label": "STREET",
+        "value": "Pride Parkway"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "DE24 8TS"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "DE24 8TT"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "DE24 8TU"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "DE24 8TW"
+      },
+      {
+        "label": "EMAIL",
+        "value": "marlhoekstra@yahoo.com"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "97008.40376"
+      },
+      {
+        "label": "DATE",
+        "value": "18th January 2018"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Haradin"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Yousuf"
+      },
+      {
+        "label": "DATE",
+        "value": "September 26th, 1977"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Aleksandrowicz Novicic"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Ilbeyiilingi"
+      },
+      {
+        "label": "EMAIL",
+        "value": "chartan@outlook.com"
+      }
+    ],
+    [
+      {
+        "label": "TAXNUM",
+        "value": "59614.69209"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "074798472"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "060 616.8508"
+      }
+    ],
+    [
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "3569121651957885"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "6019456713662143"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "09-89 01.82 51"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "39162 48329"
+      },
+      {
+        "label": "DATE",
+        "value": "February 22nd, 1951"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Xara"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Kouanda"
+      },
+      {
+        "label": "STREET",
+        "value": "Pali Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Nardiganj"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "209402"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "8035.082 3007"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "8K5SCM9M0E"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "7761598270"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Richa Lo"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Ponte"
+      },
+      {
+        "label": "DATE",
+        "value": "March/26"
+      },
+      {
+        "label": "STREET",
+        "value": "Pargi Manneguda Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Jambusar Bhatodiya Kalan"
+      },
+      {
+        "label": "EMAIL",
+        "value": "EWF@aol.com"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "08/03/2006"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "1882044428"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "5524779877522366"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Geisa Nilcéa"
+      },
+      {
+        "label": "STREET",
+        "value": "Last Chance Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Newberry Springs"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Kaltërina"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Grmay"
+      },
+      {
+        "label": "DATE",
+        "value": "December 4th, 2020"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "J9DK7Q9919"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "2959510179"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "M4841797O"
+      },
+      {
+        "label": "DATE",
+        "value": "March 28th, 1941"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Nadia"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Chionh"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "01654.131.351-5896"
+      }
+    ]
+  ],
+  "latency_s": [
+    0.67,
+    0.854,
+    0.36,
+    0.666,
+    0.475,
+    0.578,
+    0.523,
+    0.559,
+    0.569,
+    0.506,
+    0.618,
+    0.491,
+    0.421,
+    0.591,
+    0.59,
+    0.507,
+    0.874,
+    0.559,
+    0.71,
+    0.538,
+    0.637,
+    0.979,
+    0.534,
+    0.493,
+    0.533,
+    0.472,
+    0.546,
+    0.6,
+    0.504,
+    0.728,
+    0.49,
+    0.845,
+    0.777,
+    0.774,
+    0.759,
+    0.495,
+    0.554,
+    0.616,
+    0.55,
+    0.502,
+    0.615,
+    0.635,
+    0.488,
+    0.622,
+    0.713,
+    0.568,
+    0.54,
+    0.48,
+    0.667,
+    0.472
+  ],
+  "api_failures": [],
+  "usage": {
+    "prompt_tokens": 30189,
+    "completion_tokens": 5590
+  },
+  "cost_usd": 0.0210196
+}
