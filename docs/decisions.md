@@ -557,3 +557,68 @@ have separated. `write_phase3.py` computes the standard error and the verdict fr
 this cannot drift if the numbers are ever regenerated.
 **Revisit if:** Phase 4's sealed-test numbers separate the two, which would mean 200 val rows was simply too
 small a sample to resolve a real difference.
+
+---
+
+## D-028 · The test set is opened once, by both models, through one harness
+
+**Date:** 2026-09-02
+**Chose:** A single pass over all 1,000 test rows per model, scored by the same `metric.Score` and — on
+the student's side — by `eval.evaluate()` unchanged from Phase 3. `allow_test=True` appears in exactly
+three files: the two benchmark scripts and the report generator, which calls no model.
+**Over:** Evaluating on test during development, or scoring the two models on different subsets.
+**Why:** The spec names "no untouched test set, so every quality claim is contaminated" as the way this
+project usually goes wrong, and Phases 1-3 spent all their prompt development on `val` specifically to
+keep this option open. Spending it on anything other than the final benchmark would waste three phases of
+discipline. Both scripts also re-hash `data/test.jsonl` against the sha256 in `data/manifest.json` before
+scoring, and every saved measurement records the hash it was taken against, so a report cannot silently
+mix two different test sets.
+**Also buys:** the val → test row in the report. Both models were measured on both splits by the same
+code, so a leak would show up as the student dropping on test while the teacher — whose prompt was frozen
+in Phase 1 — does not.
+**Cost, stated plainly:** the test set is now used. Any further tuning has no clean set left to prove
+itself on, and Phase 5's router must be developed against `val` for exactly that reason.
+**Revisit if:** never, for this dataset. A new held-out split would have to be drawn and frozen.
+
+---
+
+## D-029 · The student's cost is priced at a rented GPU, not at Kaggle's free one
+
+**Date:** 2026-09-02
+**Chose:** Price the measured T4 at a public on-demand rate — AWS `g4dn.xlarge`, $0.526/hr, us-east-1,
+checked 2026-09-02 — and report cost per 1,000 requests at 100%, 50% and 25% utilisation.
+**Over:** Reporting Kaggle's actual $0.00, or projecting throughput onto an A10G/L4 never measured.
+**Why:** Training and evaluation genuinely cost nothing, but a $0 GPU makes self-hosting win at every
+volume including one request a day, which is not an economic result — it is the hardware being hidden.
+The spec names "comparing costs without counting idle GPU time, which flatters the self-hosted option" as
+a standard failure of this comparison, and a free GPU is that failure in its purest form. Pricing the card
+that was actually measured keeps the number attached to the measurement; projecting onto faster hardware
+would replace it with arithmetic.
+**Why the sweep:** an hourly GPU is billed whether or not requests arrive. At 100% utilisation the
+student's cost is a best case that assumes a permanently saturated card; the 25% row is closer to what
+bursty traffic achieves, and the gap between them is where the break-even volume actually lives.
+**Revisit if:** Phase 5 serves on rented hardware, in which case the real invoice replaces the quoted rate.
+
+---
+
+## D-030 · Latency is measured on HF `generate`, and batch size is the concurrency axis
+
+**Date:** 2026-09-02
+**Chose:** Measure the student on the same Kaggle T4 and the same `src/pii/eval.py` generation path used
+throughout Phase 3, with batch size standing in for concurrency, and label the resulting cost an upper
+bound.
+**Over:** Pulling vLLM forward into Phase 4, or renting a serving card now.
+**Why:** vLLM is Phase 5's deliverable, and moving it here would merge the two phases and still leave a
+hardware problem: an fp16 8B does not fit a 16GB T4 alongside a KV cache, so serving it would need a
+quantisation path (AWQ/GPTQ) that is unproven on sm_75 — a research task inside a benchmark. Measuring
+the harness Phase 3 already used keeps Phase 4's three axes internally consistent and its quality numbers
+directly comparable.
+**What the mapping means:** static batching returns every request in a batch when its slowest member
+finishes, so a batch of 8 is the closest analogue to 8 in-flight API requests. It is not identical, and
+the report says so rather than implying the two systems were measured the same way. Latency rows are timed
+in arrival order rather than length-sorted — sorting is right for a bulk eval and wrong here, since it
+reports a workload where every request conveniently arrives beside others of its own length.
+**Cost, stated plainly:** these numbers understate the student. Continuous batching and paged attention
+are exactly what this path lacks, so Phase 5 will lower the cost and raise the throughput, and any
+break-even computed from Phase 4's table would be pessimistic. It is therefore not computed here.
+**Revisit if:** Phase 5's vLLM numbers land, at which point this becomes the before half of a comparison.
