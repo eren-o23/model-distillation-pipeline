@@ -172,3 +172,14 @@ def extract(cli, model_id: str, source_text: str, retries: int = 1) -> tuple[lis
             return entities, usage
 
     return None, usage
+
+
+def is_api_failure(entities: list | None, prompt_tokens: int) -> bool:
+    """A null result with nothing billed never reached the model — a 429 or a timeout, not a bad answer.
+
+    `extract` returns None for both, so the caller has to separate them. Counting a transport failure as
+    schema-invalid reports a teacher quality problem that did not occur: Phase 2's first full run logged
+    684 of these, which would have published an 8.6% schema-invalid rate against the 0% actually
+    measured. They are also free to retry, being unbilled.
+    """
+    return entities is None and prompt_tokens == 0

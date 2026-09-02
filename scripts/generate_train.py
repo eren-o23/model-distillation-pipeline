@@ -28,6 +28,7 @@ from src.pii.data import DATA_DIR, load_split, template_key  # noqa: E402
 from src.pii.metric import Score, score, strip_hallucinated  # noqa: E402
 from src.pii.student import to_sft_example  # noqa: E402
 from src.pii.teacher import client, extract, price_for  # noqa: E402
+from src.pii.teacher import is_api_failure as _is_api_failure  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW_LOG = ROOT / "reports" / "raw" / "train-teacher.jsonl"
@@ -65,14 +66,14 @@ def read_log() -> dict[str, dict]:
 
 
 def is_api_failure(record: dict) -> bool:
-    """A null result with nothing billed never reached the model — a 429 or a timeout, not a bad answer.
+    """This log's record shape, over the predicate in teacher.py.
 
-    The distinction is load-bearing twice over. These rows are retryable and free to retry, so the run
-    should re-fetch them rather than silently dropping them from the training set. And counting them as
-    schema-invalid would report a teacher quality failure that did not happen: the first full run logged
-    684 of these, which would have read as an 8.6% schema-invalid rate against the 0% actually measured.
+    The distinction is load-bearing twice over: these rows are retryable and free to retry, so the run
+    re-fetches them rather than silently dropping them from the training set, and counting them as
+    schema-invalid would report a teacher quality failure that did not happen. Phase 4's benchmark needs
+    the same predicate, so it lives next to `extract`, which is what produces the ambiguous null.
     """
-    return record["entities"] is None and record["in"] == 0
+    return _is_api_failure(record["entities"], record["in"])
 
 
 def generate(rows: list[dict], model_id: str, workers: int) -> None:

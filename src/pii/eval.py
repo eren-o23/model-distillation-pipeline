@@ -113,7 +113,8 @@ def generate(model, tok, prompts: list[str], batch_size: int = 8) -> list[str]:
     return [out[i] for i in range(len(prompts))]
 
 
-def evaluate(model, tok, rows: list[dict], system: str = SHORT_SYSTEM, batch_size: int = 8):
+def evaluate(model, tok, rows: list[dict], system: str = SHORT_SYSTEM, batch_size: int = 8,
+             n_samples: int | None = 10):
     """Score the model over `rows` (frozen-split format: uid, source_text, entities).
 
     Scoring is against dataset **gold**, never against the teacher — the same absolute yardstick used for
@@ -122,6 +123,10 @@ def evaluate(model, tok, rows: list[dict], system: str = SHORT_SYSTEM, batch_siz
     Returns (Score, samples) where samples is a handful of (source, gold, raw, parsed) for eyeballing in
     W&B. `_parse` is the teacher's validator, reused deliberately: the student is graded by exactly the
     predicate Phase 5's router will escalate on.
+
+    `n_samples=None` keeps every row instead of the first 10. Phase 4 needs the full per-row predictions
+    to bootstrap a confidence interval on the student-minus-teacher gap; W&B does not, and a 1,000-row
+    table logged every epoch would be the tail wagging the dog.
     """
     prompts = [render_prompt(tok, r["source_text"], system) for r in rows]
     raws = generate(model, tok, prompts, batch_size)
@@ -137,8 +142,8 @@ def evaluate(model, tok, rows: list[dict], system: str = SHORT_SYSTEM, batch_siz
             "raw": raw,
             "parsed": _parse(raw),
         }
-        for r, raw in list(zip(rows, raws, strict=True))[:10]
-    ]
+        for r, raw in zip(rows, raws, strict=True)
+    ][:n_samples]
     return s, samples
 
 

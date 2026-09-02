@@ -162,3 +162,33 @@ def load_split(name: str, allow_test: bool = False, data_dir: Path = DATA_DIR) -
     path = data_dir / f"{name}.jsonl"
     with path.open() as f:
         return [json.loads(line) for line in f]
+
+
+def verify_frozen(name: str, data_dir: Path = DATA_DIR) -> str:
+    """Check a split file against the sha256 that was frozen into manifest.json when it was built.
+
+    Phase 4 opens the sealed test set, and every claim in its report rests on that file being the one
+    Phase 1 froze three phases ago. Re-hashing 681KB costs milliseconds; trusting that nothing touched
+    it in the meantime costs the benchmark's credibility if something did.
+    """
+    manifest = json.loads((data_dir / "manifest.json").read_text())
+    expected = manifest["splits"][name]["sha256"]
+    actual = _sha256(data_dir / f"{name}.jsonl")
+    if actual != expected:
+        raise RuntimeError(
+            f"{name}.jsonl does not match the frozen manifest.\n"
+            f"  expected {expected}\n"
+            f"  actual   {actual}\n"
+            "Every measured number is tied to the frozen file. Restore it rather than benchmarking this one."
+        )
+    return actual
+
+
+def latency_sample(rows: list[dict], n: int = 100) -> list[dict]:
+    """A fixed, seeded subset of a split, for the latency axis.
+
+    Teacher and student must be timed on the *same* inputs: latency tracks input length, so two models
+    measured on two samples are not comparable however carefully the concurrency is matched. Seeded from
+    the same SEED the splits are frozen with, so both scripts and any re-run draw identical rows.
+    """
+    return random.Random(SEED).sample(rows, min(n, len(rows)))
