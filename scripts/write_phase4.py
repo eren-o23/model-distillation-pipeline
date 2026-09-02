@@ -39,9 +39,14 @@ BOOTSTRAP_DRAWS = 2000
 
 
 def load_one(pattern: str) -> dict | None:
-    """The single matching measurement, or None. Filenames carry n, so globbing beats hardcoding."""
-    hits = sorted(RAW.glob(pattern))
-    return json.loads(hits[-1].read_text()) if hits else None
+    """The largest matching measurement, or None.
+
+    Largest by row count, not by filename: smoke-test checkpoints sit in the same directory and
+    `teacher-test-20.json` sorts after `teacher-test-1000.json`, so a lexicographic pick would report
+    the 20-row rehearsal as the benchmark.
+    """
+    hits = [json.loads(p.read_text()) for p in RAW.glob(pattern)]
+    return max(hits, key=lambda b: b.get("n", 0)) if hits else None
 
 
 def score_of(rows: list[dict], preds: list) -> Score:
@@ -71,9 +76,13 @@ def main() -> None:
     teacher = load_one("teacher-test-*.json")
     if not teacher:
         sys.exit("no teacher run found — scripts/benchmark_teacher.py --yes has not been run")
+    # Only students measured over the same rows as the teacher. A --limit smoke run left in this
+    # directory would otherwise be compared against the full teacher run and read as a bad adapter.
     students = {p.stem: json.loads(p.read_text()) for p in sorted(RAW.glob("student-*-test-*.json"))}
+    students = {k: v for k, v in students.items() if len(v["uids"]) == teacher["n"]}
     if not students:
-        sys.exit("no student run found — scripts/benchmark_student.py has not been run")
+        sys.exit("no student run over the same rows as the teacher — "
+                 "run scripts/benchmark_student.py without --limit")
 
     # Every payload must have been measured against the file this script just verified. Without this a
     # rebuilt split would silently produce a report that mixes two different test sets.
@@ -91,7 +100,7 @@ def main() -> None:
     # Rank the students by F1 so the best one is the headline, whichever rank it turns out to be.
     parsed = {}
     for name, blob in students.items():
-        assert blob["uids"] == [r["uid"] for r in rows[: len(blob["uids"])]], f"{name} is out of order"
+        assert blob["uids"] == [r["uid"] for r in rows], f"{name} is out of order"
         preds = [s["parsed"] for s in blob["samples"]]
         parsed[name] = {"blob": blob, "preds": preds, "counts": row_counts(golds, preds),
                         "score": score_of(rows, preds), "rank": blob["adapter"].split("-r")[-1]}
