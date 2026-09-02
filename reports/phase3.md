@@ -3,7 +3,7 @@
 **Student:** `Qwen3-8B` + QLoRA (4-bit NF4), trained on 7,842 teacher-generated examples.
 **Hardware:** Kaggle 2xT4 (sm_75) — fp16, no bf16, no FlashAttention-2 (D-019).
 **Measured:** 2026-09-02 against dataset **gold** on the **val** split — every model in the headline
-table on the same 200 rows the teacher ceiling was measured on (D-021).
+table on the same 200 rows the teacher ceiling was measured on, plus one confirmation run of the winning adapter over all 1,000 (D-021).
 **The test split was not touched.** Phase 3 never passes `allow_test=True`.
 **API spend: $0.** Training and evaluation are entirely local to Kaggle's free tier.
 
@@ -16,6 +16,12 @@ table on the same 200 rows the teacher ceiling was measured on (D-021).
 | untuned Qwen3-8B, teacher's ~475-token prompt | 0.725 | 87.1% | baseline |
 | **student** QLoRA r8, epoch 1 **(best)** | **0.829** | 99.6% | fine-tuned |
 | **student** QLoRA r16, epoch 2 | **0.823** | 98.9% | fine-tuned |
+| ↳ **r8** re-scored on all 1,000 val rows | **0.833** | 100.1% | **headline** |
+
+The headline row is scored on 1,000 rows against the teacher's 200, so the two are not measured at equal
+precision and **"matches the teacher" is the defensible claim, not "beats" it** — the 0.001 difference is far
+inside the ~0.011 standard error on this sample. Phase 4 settles it on the sealed test set, where re-measuring
+the teacher at the same n costs about $0.24.
 
 Fine-tuning moved the same 8B model from **0.656** to
 **0.829** on an identical ~60-token prompt — **+0.173 F1** that is attributable to the

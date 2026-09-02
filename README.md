@@ -4,7 +4,7 @@ Distilling a PII-detection capability from a large open-weight teacher into an 8
 the two on quality, cost, and latency to find the **break-even request volume** — the traffic level above
 which self-hosting the student beats paying per-token for the teacher.
 
-**Status:** Phase 3 of 5 complete — the student matches the teacher at 0.829 micro-F1. Benchmarking next.
+**Status:** Phase 3 of 5 complete — the student matches the teacher at 0.833 micro-F1. Benchmarking next.
 
 ---
 
@@ -39,18 +39,18 @@ quarter of the input tokens. The sealed test set and the break-even volume land 
 | **teacher** `qwen3p7-plus` (API) | 0.832 | 0.0% |
 | untuned Qwen3-8B, ~60-token prompt | 0.656 | 0.5% |
 | untuned Qwen3-8B, teacher's ~475-token prompt | 0.725 | 0.5% |
-| **student** Qwen3-8B + QLoRA rank 8 | **0.829** | **0.0%** |
+| **student** Qwen3-8B + QLoRA rank 8 | **0.833** | **0.0%** |
 
-Both numbers are measured on the same 200 validation rows, against dataset gold, by the same code
-(D-021) — so the student sits within noise of the teacher. A confirmation run over all 1,000 rows is pending;
-Phase 4 re-measures both on the sealed test set.
+The student is scored on all 1,000 validation rows, the teacher on 200 (D-021), so the two are not
+measured at equal precision — **matches** is the defensible claim, not *beats*. Phase 4 settles it on the
+sealed test set, where re-measuring the teacher at the same n costs about $0.24.
 
 Two baselines were measured before training, and they are what make the result readable. Fine-tuning is worth
 **+0.173** over the same model on the same short prompt. Prompting alone — handing the untuned model the
 teacher's full 475-token conventions — buys only +0.069, and costs 4x the input tokens every request. That
 gap is the evidence behind D-017, and it feeds the break-even number directly.
 
-Schema-invalid output fell from 0.5% to **0 in 200**. That is a reliability gain on top of accuracy, and it
+Schema-invalid output fell from 0.5% to **0 in 1,000**. That is a reliability gain on top of accuracy, and it
 sets the floor for Phase 5's escalation rate.
 
 **Rank 8 against rank 16** is a null result, reported as one: 0.829 vs 0.823 on 200 rows, a 0.005 gap against
@@ -71,6 +71,10 @@ the cost, so `qwen3p7-plus` won on economics.
 Strongest labels are `EMAIL` (1.000), `DATE` (0.983) and `TELEPHONENUM` (0.944). The ceiling is held down by
 `GIVENNAME`/`SURNAME` (~0.68), where the dataset's own given/family-name boundary is genuinely ambiguous on
 multicultural names, and by `IDCARDNUM` (0.377) — see the decision log for why that one resisted fixing.
+
+The student inherited that last one precisely: **`IDCARDNUM` at 0.901 precision but 0.285 recall** across
+1,000 rows. It learned to be conservative because the teacher taught it to be (D-015), which is the clearest
+concrete argument in the project for Phase 5's escalation path.
 
 ### Training set ([reports/phase2.md](reports/phase2.md))
 

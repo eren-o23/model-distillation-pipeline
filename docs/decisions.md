@@ -535,3 +535,25 @@ is narrower. If the two land within noise of each other, that is a weaker result
 given, and the report has to say the spread was constrained by VRAM rather than chosen.
 **Revisit if:** training moves to a card with more than 16GB, where rank 32 fits at batch 4 and the original
 comparison becomes available.
+
+---
+
+## D-027 · The rank comparison is a null result, and is reported as one
+
+**Date:** 2026-09-02
+**Chose:** Report rank 8 vs rank 16 as *not separable*, and select rank 8 on cost rather than on quality.
+**Over:** presenting rank 8's higher number as a win.
+**Why:** rank 8 scored 0.829 and rank 16 scored 0.823 on the same 200 val rows. That 0.005 gap sits against a
+standard error of about **0.011** on 1,283 scored entities, so the two configurations are statistically
+indistinguishable. Reading the ordering as a result would have been the easiest way to overclaim in the whole
+phase — the numbers are right there and the higher one is tempting.
+**What the comparison actually shows:** doubling adapter capacity bought **nothing measurable**, while costing
+more memory (13.93 of 14.56 GiB peak at rank 16, against 12.13 at rank 8) and taking an extra epoch to reach
+the same place — rank 8 peaked at epoch 1, rank 16 at epoch 2. For a task this narrow, the smaller adapter is
+the right default, and rank 8 is selected because it is cheaper at equal quality.
+**Also worth stating:** this is a weaker spread than planned. D-026 cut the second configuration from rank 32
+to rank 16 on VRAM grounds, so the experiment covers a 2x capacity range rather than 4x. A 4x spread might
+have separated. `write_phase3.py` computes the standard error and the verdict from the saved measurements, so
+this cannot drift if the numbers are ever regenerated.
+**Revisit if:** Phase 4's sealed-test numbers separate the two, which would mean 200 val rows was simply too
+small a sample to resolve a real difference.

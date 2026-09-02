@@ -91,8 +91,12 @@ def main() -> None:
         rows.append(f"| **student** QLoRA {c}, epoch {e['epoch']}{mark} | **{e['micro_f1']:.3f}** | "
                     f"{pct(e['micro_f1'], t_f1)} | fine-tuned |")
     if full:
-        rows.append(f"| ↳ same adapter, all {full['n_examples']:,} val rows | **{full['micro_f1']:.3f}** | "
-                    f"{pct(full['micro_f1'], t_f1)} | **headline** |")
+        # Name the config rather than saying "same adapter": the row is appended after every config, so
+        # "same" would point at whichever happened to be listed last.
+        which = next((c for c in runs if f"-{c}-" in full.get("tag", "") or full.get("tag", "").endswith(c)),
+                     winner)
+        rows.append(f"| ↳ **{which}** re-scored on all {full['n_examples']:,} val rows | "
+                    f"**{full['micro_f1']:.3f}** | {pct(full['micro_f1'], t_f1)} | **headline** |")
 
     gain = (best["micro_f1"] - b_short["micro_f1"]) if b_short else None
     prompt_gain = (b_teacher["micro_f1"] - b_short["micro_f1"]) if (b_short and b_teacher) else None
@@ -191,7 +195,12 @@ table on the same {EVAL_N} rows the teacher ceiling was measured on""" + (
 |---|---|---|---|
 {chr(10).join(rows)}
 
-""" + ("" if gain is None else f"""Fine-tuning moved the same 8B model from **{b_short['micro_f1']:.3f}** to
+""" + ("" if gain is None else f"""The headline row is scored on 1,000 rows against the teacher's 200, so the two are not measured at equal
+precision and **"matches the teacher" is the defensible claim, not "beats" it** — the 0.001 difference is far
+inside the ~0.011 standard error on this sample. Phase 4 settles it on the sealed test set, where re-measuring
+the teacher at the same n costs about $0.24.
+
+Fine-tuning moved the same 8B model from **{b_short['micro_f1']:.3f}** to
 **{best['micro_f1']:.3f}** on an identical ~60-token prompt — **{gain:+.3f} F1** that is attributable to the
 weights rather than to the context.
 """) + ("" if prompt_gain is None else f"""
