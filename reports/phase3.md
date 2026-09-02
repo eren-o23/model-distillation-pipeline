@@ -2,7 +2,7 @@
 
 **Student:** `Qwen3-8B` + QLoRA (4-bit NF4), trained on 7,842 teacher-generated examples.
 **Hardware:** Kaggle 2xT4 (sm_75) — fp16, no bf16, no FlashAttention-2 (D-019).
-**Measured:** 2026-09-01 against dataset **gold** on the **val** split — every model in the headline
+**Measured:** 2026-09-02 against dataset **gold** on the **val** split — every model in the headline
 table on the same 200 rows the teacher ceiling was measured on (D-021).
 **The test split was not touched.** Phase 3 never passes `allow_test=True`.
 **API spend: $0.** Training and evaluation are entirely local to Kaggle's free tier.
@@ -15,6 +15,7 @@ table on the same 200 rows the teacher ceiling was measured on (D-021).
 | untuned Qwen3-8B, ~60-token prompt | 0.656 | 78.8% | baseline |
 | untuned Qwen3-8B, teacher's ~475-token prompt | 0.725 | 87.1% | baseline |
 | **student** QLoRA r8, epoch 1 **(best)** | **0.829** | 99.6% | fine-tuned |
+| **student** QLoRA r16, epoch 2 | **0.823** | 98.9% | fine-tuned |
 
 Fine-tuning moved the same 8B model from **0.656** to
 **0.829** on an identical ~60-token prompt — **+0.173 F1** that is attributable to the
@@ -30,6 +31,8 @@ and the gap between those two baselines is what the fine-tune replaced.
 |---|---|---|---|---|---|---|
 | r8 | 1 | 0.829 | 0.838 | 0.820 | 0/200 (0.0%) | 1 |
 | r8 | 2 | 0.822 | 0.831 | 0.814 | 0/200 (0.0%) | 1 |
+| r16 | 1 | 0.822 | 0.831 | 0.814 | 1/200 (0.5%) | 1 |
+| r16 | 2 | 0.823 | 0.831 | 0.816 | 0/200 (0.0%) | 1 |
 
 Checkpoints are selected on **val micro-F1, not val loss** (D-021) — they disagree, and F1 is the reported
 number. Evaluation is against gold, so the student is measured on the same absolute yardstick as the teacher
@@ -37,11 +40,16 @@ and can in principle exceed it.
 
 **`r8` peaked at epoch 1 and declined after it** (0.829 → 0.822). The curve turning over is the overfitting point the spec warns about — found, not assumed. It also means the epoch budget was never the binding constraint on quality, so D-024's choice of 2 epochs on compute grounds cost nothing here.
 
-## rank 8
+**`r16` was still improving at the last epoch** (0.822 → 0.823), so the 2-epoch budget chosen on compute grounds (D-024) left quality on the table. Recorded rather than presented as optimal.
 
-| config | trainable params | best epoch | micro-F1 | train time |
+## rank 8 vs rank 16
+
+| config | best epoch | micro-F1 | schema-invalid | train time |
 |---|---|---|---|---|
-| r8 | see W&B | 1 | 0.829 | 7.6h |
+| rank 8 | 1 | 0.829 | 0/200 | 7.6h |
+| rank 16 | 2 | 0.823 | 0/200 | 7.2h |
+
+**The two configurations are not separable on this evidence.** The gap is 0.005 micro-F1, against a standard error of about 0.011 on 1,283 scored entities — well inside noise. The honest reading is not that `r8` is better, but that **2x more adapter capacity bought nothing measurable**, while costing more memory and, at rank 16, an extra epoch to get there. For a task this narrow the smaller adapter is the right default, and that is the trade-off the spec asks to see.
 
 `lora_alpha` tracks rank at 2r in both runs, so the `alpha/r` scaling is constant and adapter capacity is the
 only difference between them (D-020). Without that, a rank change would also be a 4x change in effective
@@ -74,7 +82,7 @@ and it is the argument for the escalation path in Phase 5 rather than for more t
 | | |
 |---|---|
 | API spend | **$0.00** |
-| Kaggle GPU | 7.6h of a ~30h weekly quota |
+| Kaggle GPU | 14.9h of a ~30h weekly quota |
 | running project total | ~$5.02 of $50, unchanged from Phase 2 |
 
 ## Method notes

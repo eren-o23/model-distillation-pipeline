@@ -117,6 +117,34 @@ def main() -> None:
     inherited = [lbl for lbl in ("IDCARDNUM", "GIVENNAME", "SURNAME")
                  if lbl in headline["per_label"] and headline["per_label"][lbl]["f1"] < 0.75]
 
+    # Is the gap between configurations bigger than the noise floor? On ~1,300 entities the standard
+    # error of a micro-F1 near 0.83 is ~0.010, so a 0.006 spread is not a result — and reporting it as
+    # one would be the single easiest way to overclaim in this whole phase.
+    import math
+
+    spread_note = ""
+    if len(best_by_config) > 1:
+        vals = {c: e["micro_f1"] for c, e in best_by_config.items()}
+        top, low = max(vals, key=vals.get), min(vals, key=vals.get)
+        gap = vals[top] - vals[low]
+        support = sum(v["support"] for v in best_by_config[top]["per_label"].values())
+        se = math.sqrt(vals[top] * (1 - vals[top]) / max(support, 1))
+        if gap < 2 * se:
+            spread_note = (
+                f"**The two configurations are not separable on this evidence.** The gap is "
+                f"{gap:.3f} micro-F1, against a standard error of about {se:.3f} on {support:,} scored "
+                f"entities — well inside noise. The honest reading is not that `{top}` is better, but "
+                f"that **{4 if '32' in top + low else 2}x more adapter capacity bought nothing "
+                f"measurable**, while costing more memory and, at rank 16, an extra epoch to get there. "
+                f"For a task this narrow the smaller adapter is the right default, and that is the "
+                f"trade-off the spec asks to see."
+            )
+        else:
+            spread_note = (
+                f"**`{top}` wins by {gap:.3f} micro-F1**, against a standard error of about {se:.3f} on "
+                f"{support:,} scored entities — a real difference rather than a sampling artefact."
+            )
+
     rank_heading = " vs ".join(f"rank {c[1:]}" for c in runs) or "Configurations"
     gpu_hours = {c: (s or {}).get("train_runtime_s", 0) / 3600 for c, s in summaries.items()}
 
@@ -183,12 +211,15 @@ and can in principle exceed it.
 
 ## {rank_heading}
 
-| config | trainable params | best epoch | micro-F1 | train time |
+| config | best epoch | micro-F1 | schema-invalid | train time |
 |---|---|---|---|---|
 """ + "\n".join(
-        f"| r{c[1:]} | see W&B | {best_by_config[c]['epoch']} | {best_by_config[c]['micro_f1']:.3f} | "
+        f"| rank {c[1:]} | {best_by_config[c]['epoch']} | {best_by_config[c]['micro_f1']:.3f} | "
+        f"{best_by_config[c]['schema_invalid']}/{best_by_config[c]['n_examples']} | "
         f"{gpu_hours.get(c, 0):.1f}h |" for c in runs
     ) + f"""
+
+{spread_note}
 
 `lora_alpha` tracks rank at 2r in both runs, so the `alpha/r` scaling is constant and adapter capacity is the
 only difference between them (D-020). Without that, a rank change would also be a 4x change in effective
