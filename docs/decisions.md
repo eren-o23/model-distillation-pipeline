@@ -557,3 +557,160 @@ have separated. `write_phase3.py` computes the standard error and the verdict fr
 this cannot drift if the numbers are ever regenerated.
 **Revisit if:** Phase 4's sealed-test numbers separate the two, which would mean 200 val rows was simply too
 small a sample to resolve a real difference.
+
+---
+
+## D-028 · The test set is opened once, by both models, through one harness
+
+**Date:** 2026-09-02
+**Chose:** A single pass over all 1,000 test rows per model, scored by the same `metric.Score` and — on
+the student's side — by `eval.evaluate()` unchanged from Phase 3. `allow_test=True` appears in exactly
+three files: the two benchmark scripts and the report generator, which calls no model.
+**Over:** Evaluating on test during development, or scoring the two models on different subsets.
+**Why:** The spec names "no untouched test set, so every quality claim is contaminated" as the way this
+project usually goes wrong, and Phases 1-3 spent all their prompt development on `val` specifically to
+keep this option open. Spending it on anything other than the final benchmark would waste three phases of
+discipline. Both scripts also re-hash `data/test.jsonl` against the sha256 in `data/manifest.json` before
+scoring, and every saved measurement records the hash it was taken against, so a report cannot silently
+mix two different test sets.
+**Also buys:** the val → test row in the report. Both models were measured on both splits by the same
+code, so a leak would show up as the student dropping on test while the teacher — whose prompt was frozen
+in Phase 1 — does not.
+**Cost, stated plainly:** the test set is now used. Any further tuning has no clean set left to prove
+itself on, and Phase 5's router must be developed against `val` for exactly that reason.
+**Revisit if:** never, for this dataset. A new held-out split would have to be drawn and frozen.
+
+---
+
+## D-029 · The student's cost is priced at a rented GPU, not at Kaggle's free one
+
+**Date:** 2026-09-02
+**Chose:** Price the measured T4 at a public on-demand rate — AWS `g4dn.xlarge`, $0.526/hr, us-east-1,
+checked 2026-09-02 — and report cost per 1,000 requests at 100%, 50% and 25% utilisation.
+**Over:** Reporting Kaggle's actual $0.00, or projecting throughput onto an A10G/L4 never measured.
+**Why:** Training and evaluation genuinely cost nothing, but a $0 GPU makes self-hosting win at every
+volume including one request a day, which is not an economic result — it is the hardware being hidden.
+The spec names "comparing costs without counting idle GPU time, which flatters the self-hosted option" as
+a standard failure of this comparison, and a free GPU is that failure in its purest form. Pricing the card
+that was actually measured keeps the number attached to the measurement; projecting onto faster hardware
+would replace it with arithmetic.
+**Why the sweep:** an hourly GPU is billed whether or not requests arrive. At 100% utilisation the
+student's cost is a best case that assumes a permanently saturated card; the 25% row is closer to what
+bursty traffic achieves, and the gap between them is where the break-even volume actually lives.
+**Revisit if:** Phase 5 serves on rented hardware, in which case the real invoice replaces the quoted rate.
+
+---
+
+## D-030 · Latency is measured on HF `generate`, and batch size is the concurrency axis
+
+**Date:** 2026-09-02
+**Chose:** Measure the student on the same Kaggle T4 and the same `src/pii/eval.py` generation path used
+throughout Phase 3, with batch size standing in for concurrency, and label the resulting cost an upper
+bound.
+**Over:** Pulling vLLM forward into Phase 4, or renting a serving card now.
+**Why:** vLLM is Phase 5's deliverable, and moving it here would merge the two phases and still leave a
+hardware problem: an fp16 8B does not fit a 16GB T4 alongside a KV cache, so serving it would need a
+quantisation path (AWQ/GPTQ) that is unproven on sm_75 — a research task inside a benchmark. Measuring
+the harness Phase 3 already used keeps Phase 4's three axes internally consistent and its quality numbers
+directly comparable.
+**What the mapping means:** static batching returns every request in a batch when its slowest member
+finishes, so a batch of 8 is the closest analogue to 8 in-flight API requests. It is not identical, and
+the report says so rather than implying the two systems were measured the same way. Latency rows are timed
+in arrival order rather than length-sorted — sorting is right for a bulk eval and wrong here, since it
+reports a workload where every request conveniently arrives beside others of its own length.
+**Cost, stated plainly:** these numbers understate the student. Continuous batching and paged attention
+are exactly what this path lacks, so Phase 5 will lower the cost and raise the throughput, and any
+break-even computed from Phase 4's table would be pessimistic. It is therefore not computed here.
+**Revisit if:** Phase 5's vLLM numbers land, at which point this becomes the before half of a comparison.
+
+---
+
+## D-031 · At equal n the student matches the teacher, and "matches" stays the word
+
+**Date:** 2026-09-03
+**Chose:** Report the student as **statistically indistinguishable** from the teacher — 0.823 against
+0.822 micro-F1 on the same 1,000 test rows, 95% CI on the difference [-0.006, +0.007].
+**Over:** Reading the +0.001 as the student beating its teacher, which is the sentence the resume line
+wants and which the numbers do not support.
+**Why:** Phase 3 could only say "matches" because the two were measured at different n — teacher on 200
+val rows, student on 1,000. That objection is now gone: both were scored on one split, at one n, by one
+metric, for $0.46. What replaced it is a tighter argument for the same conclusion. A paired bootstrap
+over 2,000 resamples puts the student ahead in 60% of draws, which is what a coin flip looks like when
+the coin is slightly bent. The interval spans zero, so the honest claim is parity.
+**Why paired:** resampling rows for both models together cancels the difficulty that both share — the
+same ambiguous multicultural names are hard for either model — instead of counting it as evidence twice.
+Unpaired, the interval would be roughly twice as wide and would say less.
+**What parity is worth:** the student reaches it on a ~60-token prompt against the teacher's ~475 (D-017),
+with 0/1000 schema-invalid, from 7,842 examples the teacher itself generated. That is the distillation
+result. It is not a quality *win*, and the report does not dress it as one.
+**Also settled:** rank 8 against rank 16 came out 0.823 to 0.826 — the ordering reversed from val, and the
+0.003 gap sits inside a 0.005 standard error. D-027's null holds at five times the sample, on rows neither
+adapter had seen. Rank 8 stays deployed, selected on val and on cost; changing it on test evidence would
+spend the sealed set on model selection.
+**Revisit if:** never — this is the measurement the test set existed for, and it has been spent.
+
+---
+
+## D-032 · The cost result is published as the negative it is
+
+**Date:** 2026-09-03
+**Chose:** Report that on this serving stack **there is no break-even volume** — the student costs $0.43
+per 1,000 requests on a saturated T4 against the teacher's $0.44, and more than the API at any realistic
+utilisation — and leave the number standing.
+**Over:** Re-pricing the measured throughput onto a faster card until self-hosting wins, quoting Kaggle's
+free GPU, or reporting only the 100%-utilisation column.
+**Why:** Each of those alternatives produces a better-looking number without a new measurement. The spec
+is explicit that a reported negative result reads as more trustworthy than a suspiciously perfect one,
+and this one is genuinely informative: it says the bottleneck is **not** quality (parity, D-031), **not**
+the model (a 4-bit 8B on a $0.53/hr card), and **not** the prompt (already 4x shorter). It is throughput —
+0.336 req/s, where HF `generate` idles the card between batches and pads every request to the longest in
+its batch.
+**What it buys Phase 5:** a target computed from measurement rather than assumed. vLLM needs 0.67 req/s
+for the student merely to match API pricing at 50% utilisation, and 6.7 req/s for the tenfold advantage
+the project set out to find — 2x and 20x the current throughput. Continuous batching and paged attention
+are exactly the two things this stack lacks, so the gap is the right size to be closeable, and Phase 5
+either closes it or reports that it did not.
+**Cost, stated plainly:** the headline "one-twentieth the cost" resume line is not yet earned and may not
+be. If vLLM lands at 3 req/s rather than 6.7, the honest deliverable is a break-even volume that exists
+but is unattractive, and that is what gets published.
+**Revisit if:** Phase 5's vLLM numbers land — at which point this table becomes the before half of the
+comparison rather than the conclusion.
+
+---
+
+## D-033 · The frontier-teacher restart was declined, on measurement
+
+**Date:** 2026-09-03
+**Chose:** Keep `qwen3p7-plus` and the four completed phases; spend the available budget on Phase 5's
+serving GPU instead.
+**Over:** Restarting the pipeline with a frontier model as the teacher, now that budget exists for one.
+**Why:** The residual error is not the teacher's to fix, and this is measurable rather than arguable.
+Rescoring the same test predictions three ways:
+
+| scoring | teacher | student |
+|---|---|---|
+| as reported | 0.822 | 0.823 |
+| `GIVENNAME` + `SURNAME` merged | 0.825 | 0.826 |
+| … and name spans tokenised | **0.923** | **0.926** |
+
+Merging the name labels buys +0.003, so the models are not confusing given with family names. Tokenising
+the spans buys **+0.101**: the disagreement is about where one name ends and the next begins. Broken down
+directly, **91% of the teacher's 545 name errors are span-grouping disagreements and only 6% are values it
+failed to find at all**. On `IDCARDNUM`, 188 of 193 misses were withheld from the output entirely rather
+than mislabelled — the prompt obeying D-006 and D-014 against gold data that labels excluded identifiers
+`IDCARDNUM` anyway.
+
+So roughly 0.10 of the missing 0.178 is annotation convention and ~0.05 is label scope. A frontier model
+given the same conventions makes the same choices.
+**Corroborating evidence, already paid for:** the Phase 1 bake-off measured `deepseek-v4-pro` at 3.4x the
+price for **+0.005 micro-F1**, with `GIVENNAME` and `SURNAME` unmoved to within a point (0.677/0.703
+against 0.687/0.693). Two independent routes to the same conclusion.
+**What it would have cost:** regenerating 7,842 examples, re-establishing the ceiling, retraining both
+configurations (~15h Kaggle GPU), and re-running the benchmark — weeks, and it invalidates every number in
+four reports and the decisions that cite them. The project's differentiator is the break-even volume, which
+is blocked on throughput (0.336 req/s, D-032) and not on teacher quality at all.
+**Where the money goes instead:** a 24GB L4 or A10G at roughly $0.30-0.75/hr, for a few hours, to serve the
+student in fp16 under vLLM and settle whether continuous batching reaches the 0.67 and 6.7 req/s targets.
+**Revisit if:** the label set is ever rebuilt (reopening D-006), which would change what the ceiling is made
+of — or if the task moves to a dataset whose annotation boundaries are unambiguous, where a stronger
+teacher would have somewhere to put its capability.

@@ -1,0 +1,584 @@
+{
+  "tag": "teacher-test-20",
+  "model": "accounts/fireworks/models/qwen3p7-plus",
+  "split": "test",
+  "split_sha256": "908f52f75ed401f112db462a740ee3e666b062e35042a999c2fde3eac3364eae",
+  "n": 20,
+  "workers": 8,
+  "date": "2026-09-02",
+  "uids": [
+    "24722836",
+    "20934826",
+    "21050910",
+    "21026172",
+    "20985965",
+    "20954115",
+    "24806398",
+    "21057315",
+    "21053537",
+    "20956036",
+    "20943530",
+    "24854571",
+    "24714414",
+    "21045396",
+    "21044870",
+    "20939248",
+    "20924821",
+    "20938075",
+    "21043516",
+    "21080276"
+  ],
+  "predictions": [
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Zakhar Tenaille"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Pautz"
+      },
+      {
+        "label": "DATE",
+        "value": "09/09/1977"
+      },
+      {
+        "label": "STREET",
+        "value": "Serangoon North Avenue 3"
+      },
+      {
+        "label": "CITY",
+        "value": "Singapore"
+      },
+      {
+        "label": "CITY",
+        "value": "Jurong West"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "678205"
+      },
+      {
+        "label": "EMAIL",
+        "value": "rodemoria@hotmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+65852 311 9303"
+      },
+      {
+        "label": "DATE",
+        "value": "2001-03-24T00:00:00"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Sinue Lazaro"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Siegenthaler-Gäumann"
+      },
+      {
+        "label": "EMAIL",
+        "value": "10S@outlook.com"
+      }
+    ],
+    [],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Nazmia Sinikka"
+      }
+    ],
+    [
+      {
+        "label": "CITY",
+        "value": "Ghaziabad"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "3522188243882385"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Merza Christlas Pabari"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Gebregzabiher"
+      },
+      {
+        "label": "DATE",
+        "value": "23/04/1990"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "9519675647"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "July 28th, 2013"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "05 6985 8894"
+      },
+      {
+        "label": "DATE",
+        "value": "1987-12-27T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Bogdan Aostalli-Adamini"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Kasicka"
+      },
+      {
+        "label": "DATE",
+        "value": "5th December 2006"
+      },
+      {
+        "label": "EMAIL",
+        "value": "V@outlook.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "0679-87443635"
+      },
+      {
+        "label": "STREET",
+        "value": "Hordron Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Bury Saint Edmunds Brockley"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "NE16"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "TN73207SG"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "3806009813"
+      },
+      {
+        "label": "DATE",
+        "value": "August/18"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "3613908011"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "3502190615624926"
+      }
+    ],
+    [
+      {
+        "label": "EMAIL",
+        "value": "v@outlook.com"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Taew"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Ethirveerasingam"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+6582983 2118"
+      },
+      {
+        "label": "DATE",
+        "value": "January 28th, 2003"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "27th December 2022"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "079 4495748"
+      },
+      {
+        "label": "STREET",
+        "value": "Badlapur Mhasa Road"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "208015"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Nathann Nemeshazy"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Boland"
+      },
+      {
+        "label": "STREET",
+        "value": "Diggi Malpura Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Uran Variav"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "804408"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Sawyer"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Cesna"
+      },
+      {
+        "label": "DATE",
+        "value": "October/52"
+      },
+      {
+        "label": "STREET",
+        "value": "Stretton Lane"
+      },
+      {
+        "label": "EMAIL",
+        "value": "D13@aol.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "02853 188546"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "169-840-5408"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "1237343512"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Vitalba"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Tax"
+      },
+      {
+        "label": "CITY",
+        "value": "Newcastle upon Tyne"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "ME14"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Zeba Zhasmin"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Bic"
+      },
+      {
+        "label": "DATE",
+        "value": "January/62"
+      },
+      {
+        "label": "EMAIL",
+        "value": "PB09@hotmail.com"
+      },
+      {
+        "label": "STREET",
+        "value": "Chinguacousy Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Fort Smith"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "T0C"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Hafis Giullian"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Bombace"
+      },
+      {
+        "label": "DATE",
+        "value": "07/02/1988"
+      },
+      {
+        "label": "EMAIL",
+        "value": "N1977@aol.com"
+      },
+      {
+        "label": "CITY",
+        "value": "Singapore"
+      },
+      {
+        "label": "STREET",
+        "value": "Macpherson Garden Estate"
+      }
+    ],
+    [
+      {
+        "label": "CITY",
+        "value": "Singapore"
+      },
+      {
+        "label": "STREET",
+        "value": "Toa Payoh West Market And Food Court"
+      },
+      {
+        "label": "STREET",
+        "value": "Toa Payoh West Market And Food Court"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Yahel"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Ustinova"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "S2821854B"
+      },
+      {
+        "label": "EMAIL",
+        "value": "B@aol.com"
+      },
+      {
+        "label": "DATE",
+        "value": "2013-03-09T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "STREET",
+        "value": "DCM Mill Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Berasia Tehsil Shobhapur"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "506313"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Nilo Bartel"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Herrbach"
+      },
+      {
+        "label": "DATE",
+        "value": "1967-05-25T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Moritz"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Izayah"
+      },
+      {
+        "label": "DATE",
+        "value": "24th September 1948"
+      },
+      {
+        "label": "STREET",
+        "value": "Budhana Khatauli Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Borigumma Warada"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "841101"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Issack El"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Ajami"
+      },
+      {
+        "label": "DATE",
+        "value": "June 15th, 1944"
+      },
+      {
+        "label": "EMAIL",
+        "value": "A@tutanota.com"
+      }
+    ],
+    [
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "6304006921720016876"
+      },
+      {
+        "label": "EMAIL",
+        "value": "MF29@protonmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "3107757975"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Rosanne"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Galat"
+      },
+      {
+        "label": "DATE",
+        "value": "December 2nd, 1984"
+      },
+      {
+        "label": "EMAIL",
+        "value": "M1936@protonmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+5.957-766-4731"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "4VLV0222VL"
+      },
+      {
+        "label": "STREET",
+        "value": "Provincial Road 221"
+      },
+      {
+        "label": "CITY",
+        "value": "Saint-Zénon"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "L7E 3L5"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "21st December 1965"
+      },
+      {
+        "label": "DATE",
+        "value": "22/02/1978"
+      }
+    ],
+    [
+      {
+        "label": "IDCARDNUM",
+        "value": "117500258"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "807-27-8262"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "28977 41493"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Seyna Sinka Ashtamkar"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Prelado"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "O70YJ0563740"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "203187720"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "4939094137363096"
+      }
+    ]
+  ],
+  "latency_s": [
+    2.169,
+    0.671,
+    1.075,
+    1.057,
+    0.811,
+    1.983,
+    1.126,
+    1.044,
+    0.775,
+    0.839,
+    0.532,
+    0.637,
+    0.698,
+    0.979,
+    0.741,
+    0.692,
+    0.658,
+    1.106,
+    0.387,
+    1.0
+  ],
+  "api_failures": [],
+  "usage": {
+    "prompt_tokens": 12434,
+    "completion_tokens": 2685
+  },
+  "cost_usd": 0.009269600000000001
+}

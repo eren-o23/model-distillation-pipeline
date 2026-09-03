@@ -1,0 +1,152 @@
+{
+  "tag": "teacher-latency-serial-5",
+  "model": "accounts/fireworks/models/qwen3p7-plus",
+  "split": "test",
+  "split_sha256": "908f52f75ed401f112db462a740ee3e666b062e35042a999c2fde3eac3364eae",
+  "n": 5,
+  "workers": 1,
+  "date": "2026-09-02",
+  "uids": [
+    "21041495",
+    "20967823",
+    "21002477",
+    "21000945",
+    "20939005"
+  ],
+  "predictions": [
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Mathurin"
+      },
+      {
+        "label": "DATE",
+        "value": "09/06/1988"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "8279968768115668"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Sebehate"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "2602086287"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Leuard"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Romagnini"
+      },
+      {
+        "label": "DATE",
+        "value": "30/12/1976"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Cestari Bringel"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Marcacci"
+      },
+      {
+        "label": "DATE",
+        "value": "14/04/1981"
+      },
+      {
+        "label": "STREET",
+        "value": "Hever Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Tarporley"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "G62"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "160.042.6512"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "410462229"
+      },
+      {
+        "label": "IDCARDNUM",
+        "value": "HULJU170021HN827"
+      }
+    ],
+    [],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Ashrije"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Nunziatini"
+      },
+      {
+        "label": "CITY",
+        "value": "Oakham Empingham"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "CB25 9NN"
+      },
+      {
+        "label": "DATE",
+        "value": "1956-12-27T00:00:00"
+      },
+      {
+        "label": "EMAIL",
+        "value": "10F@gmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+27 627979218"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Brunehilde"
+      },
+      {
+        "label": "STREET",
+        "value": "Skyline Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Arthur"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "S0G"
+      }
+    ]
+  ],
+  "latency_s": [
+    0.592,
+    0.813,
+    0.373,
+    0.698,
+    0.423
+  ],
+  "api_failures": [],
+  "usage": {
+    "prompt_tokens": 3094,
+    "completion_tokens": 605
+  },
+  "cost_usd": 0.0022056000000000003
+}

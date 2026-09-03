@@ -6,6 +6,7 @@ comparison would silently reward under-prediction, which is exactly the failure 
 for redaction.
 """
 
+import random
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -115,3 +116,48 @@ def score(
     for gold, pred, src in zip(golds, preds, sources, strict=True):
         s.add(gold, pred, src)
     return s
+
+
+def row_counts(golds: list[list[Entity]], preds: list[list[Entity] | None]) -> list[tuple[int, int, int]]:
+    """Per-row (tp, fp, fn), scored by the same rules as `score()`.
+
+    Micro-F1 is a ratio of sums over rows, so keeping the counts per row makes a bootstrap resample a
+    matter of adding integers rather than re-scoring every example on every draw.
+    """
+    out = []
+    for gold, pred in zip(golds, preds, strict=True):
+        s = Score()
+        s.add(gold, pred)
+        out.append((s.micro.tp, s.micro.fp, s.micro.fn))
+    return out
+
+
+def micro_f1(counts: list[tuple[int, int, int]], idx: list[int] | None = None) -> float:
+    """Micro-F1 over a selection of per-row counts; `idx` may repeat rows, as a bootstrap draw does."""
+    tp = fp = fn = 0
+    for i in range(len(counts)) if idx is None else idx:
+        a, b, c = counts[i]
+        tp, fp, fn = tp + a, fp + b, fn + c
+    p = tp / (tp + fp) if tp + fp else 0.0
+    r = tp / (tp + fn) if tp + fn else 0.0
+    return 2 * p * r / (p + r) if p + r else 0.0
+
+
+def bootstrap_delta(a: list[tuple[int, int, int]], b: list[tuple[int, int, int]], draws: int, seed: int
+                    ) -> tuple[float, float, float]:
+    """95% CI on micro_f1(a) - micro_f1(b), resampling rows with replacement.
+
+    Paired: each draw scores both models on the same resampled rows. That is only meaningful once both
+    have been measured on one split at one n, and it is what makes the interval tight enough to decide
+    "matches" against "beats" — the same rows are hard for both models, and resampling them together
+    cancels that shared difficulty instead of counting it as evidence twice.
+
+    Returns (low, high, fraction of draws where a > b).
+    """
+    rng = random.Random(seed)
+    n = len(a)
+    deltas = sorted(
+        micro_f1(a, idx) - micro_f1(b, idx)
+        for idx in ([rng.randrange(n) for _ in range(n)] for _ in range(draws))
+    )
+    return deltas[int(0.025 * draws)], deltas[int(0.975 * draws) - 1], sum(d > 0 for d in deltas) / draws
