@@ -714,3 +714,48 @@ student in fp16 under vLLM and settle whether continuous batching reaches the 0.
 **Revisit if:** the label set is ever rebuilt (reopening D-006), which would change what the ceiling is made
 of — or if the task moves to a dataset whose annotation boundaries are unambiguous, where a stronger
 teacher would have somewhere to put its capability.
+
+---
+
+## D-034 · Latency is timed on the spent test rows; everything scored stays on `val`
+
+**Date:** 2026-09-03
+**Chose:** Time Phase 5's concurrency sweep on the same seeded 100 **test** rows Phase 4 timed
+(`latency_sample(load_split("test", allow_test=True), 100)`), while every scored number in the phase —
+the parity gate, the router sweep, the operating point — is measured on `val`.
+**Over:** Timing on `val` rows instead, for consistency with the rest of the phase.
+**Why:** A latency measurement reads no gold labels and selects nothing. It cannot contaminate a
+quality claim because it makes none, and `allow_test=True` on that path never reaches `metric.Score`.
+What identical inputs buy is a before/after against Phase 4's curve that is exact rather than
+approximate: latency tracks input length, so timing the two stacks on two different samples would leave
+a difference that is partly the workload. D-028 spent the test set on *quality*; it did not spend the
+1,000 strings.
+**What it does not license:** any Phase 5 number scored against test gold. The parity gate and the
+router are on `val` precisely because the sealed set is gone, and the report says so in its header.
+**Revisit if:** never — but if a future phase wants a scored number on unseen data, a new split has to
+be drawn and frozen. Reusing this one would be the contamination D-028 avoided.
+
+---
+
+## D-035 · The escalation sweep is parameterised by rate, and every point is measured against random
+
+**Date:** 2026-09-03
+**Chose:** Sweep the router by **target escalation rate** — recovering the logprob threshold as the
+matching quantile of the observed confidence distribution — and score every operating point alongside
+**random escalation at the same rate**.
+**Over:** Sweeping raw logprob thresholds, and reporting the escalation curve on its own.
+**Why, on the parameterisation:** a rate is the knob an operator actually has ("I will pay the API for
+5% of traffic, what does it buy?"); a logprob threshold is an implementation detail whose scale shifts
+with the model, the prompt and the token count. Sweeping by rate also makes the two candidate signals
+comparable, since they are forced to spend the same budget.
+**Why the random control:** without it, a confidence signal that does no work is indistinguishable from
+the fact that escalating *any* subset to a 0.822-F1 teacher improves the blend. The control is what
+separates "the router finds the rows the student got wrong" from "more teacher is better", and only the
+first is a router. Verified on a synthetic fixture before the real run: an informative signal pulled
++0.045 clear of random, while a deliberately uninformative one tracked it to within 0.002 — the control
+detected the useless signal, which is the property it exists for.
+**Cost, stated plainly:** it doubles the sweep's arithmetic. Since the sweep calls nothing and runs on
+cached predictions, that cost is milliseconds.
+**Revisit if:** the chosen signal fails to beat random on the real measurement — in which case the
+finding is that the threshold is doing nothing, and the report says so rather than shipping a router
+whose discrimination was never demonstrated.
