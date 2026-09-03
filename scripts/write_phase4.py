@@ -11,6 +11,7 @@ in the repo that does; it calls no model, and the seal it checks is the sha256 i
 
 import json
 import math
+from collections import Counter
 import sys
 from datetime import date
 from pathlib import Path
@@ -19,7 +20,7 @@ from statistics import median
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.pii.data import SEED, load_split, verify_frozen  # noqa: E402
-from src.pii.metric import Score, bootstrap_delta, row_counts  # noqa: E402
+from src.pii.metric import Score, bootstrap_delta, normalise, row_counts  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "reports" / "raw" / "phase4"
@@ -47,6 +48,78 @@ def load_one(pattern: str) -> dict | None:
     """
     hits = [json.loads(p.read_text()) for p in RAW.glob(pattern)]
     return max(hits, key=lambda b: b.get("n", 0)) if hits else None
+
+
+NAME_LABELS = ("GIVENNAME", "SURNAME")
+
+
+def _merge_names(ents: list[dict]) -> list[dict]:
+    """Collapse GIVENNAME and SURNAME into one PERSON label, keeping spans as they are."""
+    return [{"label": "PERSON" if e["label"] in NAME_LABELS else e["label"], "value": e["value"]}
+            for e in ents]
+
+
+def _tokenise_names(ents: list[dict]) -> list[dict]:
+    """As above, and split person spans into single words.
+
+    This is the scoring a task would use if it only cared *which words are a person's name*, not how
+    the given/family boundary falls across them. Applied to gold and prediction alike, so it measures
+    agreement about name extent rather than rewarding either side.
+    """
+    out = []
+    for e in ents:
+        label = "PERSON" if e["label"] in NAME_LABELS else e["label"]
+        for token in (e["value"].split() if label == "PERSON" else [e["value"]]):
+            out.append({"label": label, "value": token})
+    return out
+
+
+def rescored(rows: list[dict], preds: list, transform) -> float:
+    s = Score()
+    for row, pred in zip(rows, preds, strict=True):
+        s.add(transform(row["entities"]), transform(pred) if pred else pred, row["source_text"])
+    return s.micro.f1
+
+
+def name_anatomy(rows: list[dict], preds: list) -> dict:
+    """Split the name errors into label swaps, span-boundary disagreements, and genuine misses.
+
+    The three have completely different fixes — a better teacher only addresses the third — so the
+    proportions decide whether the residual error is worth spending money on.
+    """
+    swap = boundary = absent = 0
+    for row, pred in zip(rows, preds, strict=True):
+        gold_names = [e for e in row["entities"] if e["label"] in NAME_LABELS]
+        pred_names = [e for e in (pred or []) if e["label"] in NAME_LABELS]
+        exact = Counter((e["label"], normalise(e["value"])) for e in pred_names)
+        values = [normalise(e["value"]) for e in pred_names]
+        for g in gold_names:
+            key = (g["label"], normalise(g["value"]))
+            if exact[key] > 0:
+                exact[key] -= 1
+            elif normalise(g["value"]) in values:
+                swap += 1        # right span, given/family the other way round
+            elif any(normalise(g["value"]) in v or v in normalise(g["value"]) for v in values):
+                boundary += 1    # right words, grouped differently
+            else:
+                absent += 1      # genuinely not found
+    total = max(swap + boundary + absent, 1)
+    return {"swap": swap, "boundary": boundary, "absent": absent, "total": swap + boundary + absent,
+            "swap_pct": swap / total, "boundary_pct": boundary / total, "absent_pct": absent / total}
+
+
+def idcard_misses(rows: list[dict], preds: list) -> tuple[int, int]:
+    """Missed IDCARDNUM values: withheld from the output entirely, versus returned under another label."""
+    withheld = mislabelled = 0
+    for row, pred in zip(rows, preds, strict=True):
+        emitted = {normalise(e["value"]) for e in (pred or [])}
+        found = {normalise(e["value"]) for e in (pred or []) if e["label"] == "IDCARDNUM"}
+        for g in row["entities"]:
+            if g["label"] != "IDCARDNUM" or normalise(g["value"]) in found:
+                continue
+            mislabelled += normalise(g["value"]) in emitted
+            withheld += normalise(g["value"]) not in emitted
+    return withheld, mislabelled
 
 
 def score_of(rows: list[dict], preds: list) -> Score:
@@ -231,6 +304,19 @@ def main() -> None:
 
     idcard = s_score.per_label.get("IDCARDNUM")
 
+    # ---- diagnostic: what the residual error is made of -------------------------------------------
+    arms = {"teacher": teacher["predictions"], "student": best["preds"]}
+    diag = ["| scoring | teacher | student |", "|---|---|---|"]
+    for label, transform in (("as reported", lambda e: e),
+                             ("`GIVENNAME` + `SURNAME` merged", _merge_names),
+                             ("… and name spans tokenised", _tokenise_names)):
+        cells = [f"{rescored(rows, preds, transform):.3f}" for preds in arms.values()]
+        bold = "**" if label == "as reported" else ""
+        diag.append(f"| {label} | {bold}{cells[0]}{bold} | {bold}{cells[1]}{bold} |")
+    t_names, s_names = name_anatomy(rows, teacher["predictions"]), name_anatomy(rows, best["preds"])
+    t_with, t_mis = idcard_misses(rows, teacher["predictions"])
+    tok_gain = rescored(rows, teacher["predictions"], _tokenise_names) - t_score.micro.f1
+
     # ---- rank comparison --------------------------------------------------------------------------
     rank_block = ""
     if len(parsed) > 1:
@@ -347,6 +433,37 @@ the training labels themselves score 0.419 F1 on this class. It is the clearest 
 Phase 5's escalation path: a router that sends low-confidence `IDCARDNUM` cases back to the teacher buys
 recall the student cannot be trained into without reopening D-006 and rebuilding the splits.
 """ if idcard else "") + ("" if not drift else f"""
+### Diagnostic — what the residual error is made of
+
+Not a headline, and not a replacement for the numbers above: the task is defined by the dataset's
+annotation conventions, and a redactor that finds a name but brackets it differently still writes the
+wrong span into the output. What this shows is *which kind* of disagreement the remaining error is.
+
+{chr(10).join(diag)}
+
+Merging the two name labels buys almost nothing, so the models are not confusing given names with family
+names. Tokenising the spans buys **{tok_gain:+.3f}** — the disagreement is about where one name ends and
+the next begins, on multicultural names where the gold data's own boundary is not recoverable from the
+string.
+
+The same conclusion falls out of the errors directly — {t_names['total']} name errors for the teacher,
+{s_names['total']} for the student, and the two break down almost identically:
+
+| | teacher | student |
+|---|---|---|
+| right span, given/family swapped | {t_names['swap']} ({t_names['swap_pct']:.0%}) | {s_names['swap']} ({s_names['swap_pct']:.0%}) |
+| right words, grouped differently | {t_names['boundary']} ({t_names['boundary_pct']:.0%}) | {s_names['boundary']} ({s_names['boundary_pct']:.0%}) |
+| **genuinely not found** | **{t_names['absent']} ({t_names['absent_pct']:.0%})** | **{s_names['absent']} ({s_names['absent_pct']:.0%})** |
+
+And `IDCARDNUM`, the weakest label at {idcard.f1 if idcard else 0:.3f}: of the teacher's misses,
+**{t_with} were withheld from the output entirely** against {t_mis} returned under a different label. That
+is the prompt doing what D-006 and D-014 told it to — national ID numbers only, licence and passport
+numbers excluded — against gold data that labels some of those excluded identifiers `IDCARDNUM` anyway.
+
+Both findings point the same way: the residual error is **annotation convention and label scope, not
+detection capability**. That is what makes it immune to a better teacher (D-033), and it is why the
+escalation path in Phase 5 is aimed at `IDCARDNUM` recall rather than at the name labels.
+
 ### val → test
 
 | model | val | test | Δ |

@@ -60,6 +60,41 @@ the training labels themselves score 0.419 F1 on this class. It is the clearest 
 Phase 5's escalation path: a router that sends low-confidence `IDCARDNUM` cases back to the teacher buys
 recall the student cannot be trained into without reopening D-006 and rebuilding the splits.
 
+### Diagnostic — what the residual error is made of
+
+Not a headline, and not a replacement for the numbers above: the task is defined by the dataset's
+annotation conventions, and a redactor that finds a name but brackets it differently still writes the
+wrong span into the output. What this shows is *which kind* of disagreement the remaining error is.
+
+| scoring | teacher | student |
+|---|---|---|
+| as reported | **0.822** | **0.823** |
+| `GIVENNAME` + `SURNAME` merged | 0.825 | 0.826 |
+| … and name spans tokenised | 0.923 | 0.926 |
+
+Merging the two name labels buys almost nothing, so the models are not confusing given names with family
+names. Tokenising the spans buys **+0.101** — the disagreement is about where one name ends and
+the next begins, on multicultural names where the gold data's own boundary is not recoverable from the
+string.
+
+The same conclusion falls out of the errors directly — 545 name errors for the teacher,
+558 for the student, and the two break down almost identically:
+
+| | teacher | student |
+|---|---|---|
+| right span, given/family swapped | 15 (3%) | 19 (3%) |
+| right words, grouped differently | 498 (91%) | 501 (90%) |
+| **genuinely not found** | **32 (6%)** | **38 (7%)** |
+
+And `IDCARDNUM`, the weakest label at 0.415: of the teacher's misses,
+**188 were withheld from the output entirely** against 5 returned under a different label. That
+is the prompt doing what D-006 and D-014 told it to — national ID numbers only, licence and passport
+numbers excluded — against gold data that labels some of those excluded identifiers `IDCARDNUM` anyway.
+
+Both findings point the same way: the residual error is **annotation convention and label scope, not
+detection capability**. That is what makes it immune to a better teacher (D-033), and it is why the
+escalation path in Phase 5 is aimed at `IDCARDNUM` recall rather than at the name labels.
+
 ### val → test
 
 | model | val | test | Δ |

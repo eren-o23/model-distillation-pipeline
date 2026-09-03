@@ -70,6 +70,13 @@ adapter had seen.
 `IDCARDNUM` transferred as predicted: **0.802 precision, 0.280 recall**. That single label is the concrete
 argument for Phase 5's escalation path.
 
+**What the residual error is made of.** Rescoring the same predictions with name spans tokenised lifts
+both models from ~0.82 to **~0.92**, and 91% of the teacher's 545 name errors are span-grouping
+disagreements against only 6% genuine misses. On `IDCARDNUM`, 188 of 193 misses were withheld from the
+output entirely rather than mislabelled — the prompt obeying the label scope set in D-006. The ceiling is
+annotation convention and label scope, not detection capability, which is why a frontier teacher was
+measured against and declined (D-033) rather than bought.
+
 ### The student, on validation ([reports/phase3.md](reports/phase3.md))
 
 | model | micro-F1 | schema-invalid |

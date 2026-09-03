@@ -675,3 +675,42 @@ be. If vLLM lands at 3 req/s rather than 6.7, the honest deliverable is a break-
 but is unattractive, and that is what gets published.
 **Revisit if:** Phase 5's vLLM numbers land — at which point this table becomes the before half of the
 comparison rather than the conclusion.
+
+---
+
+## D-033 · The frontier-teacher restart was declined, on measurement
+
+**Date:** 2026-09-03
+**Chose:** Keep `qwen3p7-plus` and the four completed phases; spend the available budget on Phase 5's
+serving GPU instead.
+**Over:** Restarting the pipeline with a frontier model as the teacher, now that budget exists for one.
+**Why:** The residual error is not the teacher's to fix, and this is measurable rather than arguable.
+Rescoring the same test predictions three ways:
+
+| scoring | teacher | student |
+|---|---|---|
+| as reported | 0.822 | 0.823 |
+| `GIVENNAME` + `SURNAME` merged | 0.825 | 0.826 |
+| … and name spans tokenised | **0.923** | **0.926** |
+
+Merging the name labels buys +0.003, so the models are not confusing given with family names. Tokenising
+the spans buys **+0.101**: the disagreement is about where one name ends and the next begins. Broken down
+directly, **91% of the teacher's 545 name errors are span-grouping disagreements and only 6% are values it
+failed to find at all**. On `IDCARDNUM`, 188 of 193 misses were withheld from the output entirely rather
+than mislabelled — the prompt obeying D-006 and D-014 against gold data that labels excluded identifiers
+`IDCARDNUM` anyway.
+
+So roughly 0.10 of the missing 0.178 is annotation convention and ~0.05 is label scope. A frontier model
+given the same conventions makes the same choices.
+**Corroborating evidence, already paid for:** the Phase 1 bake-off measured `deepseek-v4-pro` at 3.4x the
+price for **+0.005 micro-F1**, with `GIVENNAME` and `SURNAME` unmoved to within a point (0.677/0.703
+against 0.687/0.693). Two independent routes to the same conclusion.
+**What it would have cost:** regenerating 7,842 examples, re-establishing the ceiling, retraining both
+configurations (~15h Kaggle GPU), and re-running the benchmark — weeks, and it invalidates every number in
+four reports and the decisions that cite them. The project's differentiator is the break-even volume, which
+is blocked on throughput (0.336 req/s, D-032) and not on teacher quality at all.
+**Where the money goes instead:** a 24GB L4 or A10G at roughly $0.30-0.75/hr, for a few hours, to serve the
+student in fp16 under vLLM and settle whether continuous batching reaches the 0.67 and 6.7 req/s targets.
+**Revisit if:** the label set is ever rebuilt (reopening D-006), which would change what the ceiling is made
+of — or if the task moves to a dataset whose annotation boundaries are unambiguous, where a stronger
+teacher would have somewhere to put its capability.
