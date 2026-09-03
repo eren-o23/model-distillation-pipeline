@@ -104,8 +104,20 @@ def main() -> None:
         preds = [s["parsed"] for s in blob["samples"]]
         parsed[name] = {"blob": blob, "preds": preds, "counts": row_counts(golds, preds),
                         "score": score_of(rows, preds), "rank": blob["adapter"].split("-r")[-1]}
-    best_name = max(parsed, key=lambda k: parsed[k]["score"].micro.f1)
+    # The headline student is the one Phase 3 *deployed*, chosen on val — not whichever scores highest
+    # here. Picking the winner on the sealed set would be model selection against test, which is the
+    # contamination this whole phase is built to avoid, and on this evidence it would also be noise:
+    # the two configs sit within 0.003 of each other and D-027 already called them inseparable.
+    val_f1 = {}
+    for path in PHASE3.glob("r*-summary.json"):
+        blob = json.loads(path.read_text())
+        val_f1[path.stem.split("-")[0][1:]] = blob["best"]["f1"]
+    deployed = max(val_f1, key=val_f1.get) if val_f1 else None
+    best_name = next((k for k in parsed if parsed[k]["rank"] == deployed), None) \
+        or max(parsed, key=lambda k: parsed[k]["score"].micro.f1)
     best = parsed[best_name]
+    selection = (f"selected on **val** in Phase 3 (rank {deployed} at {val_f1[deployed]:.3f}), not on the "
+                 "rows below" if deployed else "the only configuration measured")
     s_score = best["score"]
 
     lo, hi, p_student = bootstrap_delta(best["counts"], t_counts, BOOTSTRAP_DRAWS, SEED)
@@ -146,8 +158,47 @@ def main() -> None:
                          for u in UTILISATION) + " |",
         ]
 
-    # ---- latency ----------------------------------------------------------------------------------
     t_p50_8, t_p95_8 = pcts(teacher["latency_s"])
+
+    # ---- the verdict the three axes add up to -----------------------------------------------------
+    # Stated as a computed conclusion rather than a hopeful one: whether self-hosting pays at all on this
+    # stack follows from the two cost numbers, and the answer here is not the flattering one.
+    verdict_cost = ""
+    if best_batch:
+        rps = throughput[best_batch]["requests_per_s"]
+        student_100 = per_1k(rps, 1.0)
+        ratio = student_100 / teacher_per_1k
+        # What throughput would have to be for the self-hosted arm to be worth the operational cost.
+        need_parity_50 = GPU_RATE_USD_H / (teacher_per_1k / 1000 * 3600 * 0.5)
+        need_10x_50 = GPU_RATE_USD_H / (teacher_per_1k / 10 / 1000 * 3600 * 0.5)
+        lat_ratio = throughput[8]["p50_s"] / t_p50_8 if 8 in throughput else None
+        if ratio >= 0.9:
+            verdict_cost = (
+                f"**On this serving stack there is no break-even volume.** The student costs "
+                f"${student_100:.2f} per 1,000 requests on a fully saturated T4 against the teacher's "
+                f"${teacher_per_1k:.2f} — {ratio:.0%} of the API's price at 100% utilisation, and *more* "
+                f"than the API at any realistic one (${per_1k(rps, 0.5):.2f} at 50%). Self-hosting is not "
+                f"cheaper here at one request per day or at ten million"
+                + (f", and it is {lat_ratio:.0f}x slower per request" if lat_ratio else "") + ".\n\n"
+                f"That is a real result rather than a setback, and it locates the problem precisely: the "
+                f"student's quality is not the constraint — it matches the teacher — and neither is the "
+                f"hardware price. **The constraint is throughput.** At {rps:.3f} req/s, HF `generate` "
+                f"leaves the card idle between batches and pads every request to the longest in its "
+                f"batch. Phase 5's vLLM benchmark needs **{need_parity_50:.2f} req/s** for the student "
+                f"to merely match API pricing at 50% utilisation, and **{need_10x_50:.1f} req/s** for the "
+                f"tenfold advantage this project set out to find. Those are the numbers to beat, and they "
+                f"come from measurement rather than from hope."
+            )
+        else:
+            verdict_cost = (
+                f"**The student is cheaper per request**: ${student_100:.2f} per 1,000 against the "
+                f"teacher's ${teacher_per_1k:.2f}, {1 / ratio:.1f}x, on a saturated card"
+                + (f" — while being {lat_ratio:.0f}x slower per request" if lat_ratio else "") + ". "
+                f"It stops paying below {GPU_RATE_USD_H / (teacher_per_1k / 1000 * 3600) / rps:.0%} "
+                f"utilisation, which is where Phase 5's break-even volume comes from."
+            )
+
+    # ---- latency ----------------------------------------------------------------------------------
     serial = load_one("teacher-latency-serial-*.json")
     lat_rows = []
     if serial:
@@ -193,17 +244,22 @@ def main() -> None:
             m = parsed[k]["score"]
             table.append(f"| rank {parsed[k]['rank']} | {vals[k]:.3f} | {m.micro.precision:.3f} | "
                          f"{m.micro.recall:.3f} | {m.schema_invalid}/{m.n_examples} |")
+        headline_rank = best["rank"]
         if gap < 2 * se:
             note = (f"The gap is {gap:.3f} against a standard error of about {se:.3f} on {support:,} "
                     f"scored entities. **D-027's null result holds at {n:,} rows** — five times the "
                     "sample that produced it, on data neither configuration has ever seen. Two ranks "
-                    "differing by 2x in capacity are not separable on this task, and rank 8 stays "
-                    "selected on cost.")
+                    f"differing by 2x in capacity are not separable on this task, and rank "
+                    f"{headline_rank} stays selected on cost — a decision made on val, which is why the "
+                    "ordering above does not change it.")
         else:
             note = (f"The gap is {gap:.3f} against a standard error of about {se:.3f} on {support:,} "
                     f"scored entities — **wider than noise, which reverses D-027**. The 200-row val "
-                    "comparison was underpowered rather than genuinely null, and rank "
-                    f"{parsed[top]['rank']} is the better configuration.")
+                    f"comparison was underpowered rather than genuinely null, and rank "
+                    f"{parsed[top]['rank']} is the better configuration. Note that this is a finding, "
+                    "not a selection: the deployed adapter was fixed on val before these rows were "
+                    "opened, and changing it now on test evidence would spend the sealed set on model "
+                    "choice.")
         rank_block = "\n".join(["## rank 8 vs rank 16, on the sealed test set", "", *table, "", note, ""])
 
     # ---- val -> test drift ------------------------------------------------------------------------
@@ -247,7 +303,8 @@ def main() -> None:
 verified against the manifest Phase 1 froze it with.
 **Opened once.** Both models were scored on these same rows by the same metric, and nothing was tuned
 against them: every prompt, batch size and checkpoint decision was made on `val` in Phases 1-3.
-**Student:** `{best['blob']['adapter']}` on Kaggle's T4. **Teacher:** `{teacher['model'].split('/')[-1]}` on Fireworks.
+**Student:** `{best['blob']['adapter']}` on Kaggle's T4 — {selection}.
+**Teacher:** `{teacher['model'].split('/')[-1]}` on Fireworks.
 **Phase 4 API spend: ${teacher['cost_usd'] + (serial['cost_usd'] if serial else 0):.2f}.**
 
 ## The three axes
@@ -261,6 +318,8 @@ Quality is measured at equal n on identical rows. Cost and latency are **not** l
 way and the sections below say exactly how: the teacher is a hosted API billed per token, the student is
 one rented T4 running HF `generate` with static batching, which is the pre-vLLM floor rather than a
 serving number (D-030).
+
+{verdict_cost}
 
 ## Axis 1 — Quality
 

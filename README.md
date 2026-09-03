@@ -4,7 +4,9 @@ Distilling a PII-detection capability from a large open-weight teacher into an 8
 the two on quality, cost, and latency to find the **break-even request volume** — the traffic level above
 which self-hosting the student beats paying per-token for the teacher.
 
-**Status:** Phase 3 of 5 complete — the student matches the teacher at 0.833 micro-F1. Benchmarking next.
+**Status:** Phase 4 of 5 complete — on the sealed test set the student **matches the teacher** (0.823 vs
+0.822 micro-F1, a difference well inside noise) but is **not yet cheaper to serve**. Phase 5's vLLM
+benchmark is what decides whether a break-even volume exists at all.
 
 ---
 
@@ -29,10 +31,46 @@ quietly kept (D-011).
 
 ## Results
 
-**Phases 1–3 complete.** The 8B student **matches the teacher** on held-out validation, at roughly a
-quarter of the input tokens. The sealed test set and the break-even volume land here next.
+**Phases 1–4 complete.** The 8B student matches the teacher on the sealed test set, on roughly a quarter
+of the input tokens — and on this serving stack it costs about the same per request and is far slower.
+That is the honest state of the comparison, and it says the remaining problem is throughput, not quality.
 
-### The student ([reports/phase3.md](reports/phase3.md))
+### The benchmark ([reports/phase4.md](reports/phase4.md))
+
+Both models scored on the same 1,000 rows of the sealed test split, by the same code, for $0.46.
+
+| | quality (micro-F1) | cost / 1k requests | latency p50 | latency p95 |
+|---|---|---|---|---|
+| **teacher** `qwen3p7-plus` (API) | 0.822 | $0.44 | 0.73s | 1.19s |
+| **student** Qwen3-8B + QLoRA r8 (T4) | **0.823** | $0.43 at 100% utilisation | 27.11s | 48.19s |
+
+**Quality: parity.** The gap is +0.001 with a 95% confidence interval of [-0.006, +0.007] from a paired
+bootstrap over 2,000 resamples — it spans zero, so *matches* is the claim and *beats* is not (D-031). Both
+models were 0/1000 schema-invalid. Phase 3's val objection — teacher measured at n=200, student at n=1,000
+— is now gone: one split, one n, one metric.
+
+**No contamination.** Student and teacher each drop exactly 0.010 F1 from val to test. Prompt development
+happened on `val` across three phases; a leak would have moved the student alone.
+
+**Cost: there is no break-even volume yet, and the report says so** (D-032). A saturated T4 at $0.526/hr
+costs $0.43 per 1,000 requests against the API's $0.44 — parity at 100% utilisation, and *worse* at any
+realistic one ($0.87 at 50%). Kaggle's free GPU would have made the student look free; pricing the card
+that was actually measured is what keeps the number meaningful.
+
+The bottleneck is located precisely, and it is not the model: at **0.336 req/s**, HF `generate` idles the
+card between batches and pads every request to the longest in its batch. Phase 5's vLLM run needs
+**0.67 req/s** to match API pricing at 50% utilisation and **6.7 req/s** for a tenfold advantage — 2x and
+20x the measured throughput, from continuous batching and paged attention, which are exactly what this
+stack lacks.
+
+**Rank 8 vs rank 16 stays a null result.** 0.823 against 0.826 on test — the ordering flipped from val and
+the gap sits inside a 0.005 standard error. D-027's null holds at five times the sample, on rows neither
+adapter had seen.
+
+`IDCARDNUM` transferred as predicted: **0.802 precision, 0.280 recall**. That single label is the concrete
+argument for Phase 5's escalation path.
+
+### The student, on validation ([reports/phase3.md](reports/phase3.md))
 
 | model | micro-F1 | schema-invalid |
 |---|---|---|
@@ -112,7 +150,9 @@ demonstrated, and the break-even number is meaningless without it.
 | Phase 3 — fine-tuning and evaluation | **$0.00** |
 | — projected beforehand | $3.77 |
 | — batch API alternative, declined | $1.76 |
-| **Total to date** | **~$5.02** |
+| Phase 4 — teacher re-measured on the sealed test set | **$0.47** |
+| — of which the 20-row rehearsal | $0.01 |
+| **Total to date** | **~$5.49** |
 
 Phase 2 ran synchronously rather than through the batch API, paying $1.76 more to keep an expensive run
 interactive and resumable (D-016). The declined saving is reported rather than omitted — a cost analysis that
@@ -128,7 +168,8 @@ Budget ceiling: **$50** in Fireworks credits. Fine-tuning runs on Kaggle's free 
 
 - **Splits are frozen before any tuning**, written with a SHA256 manifest, and drawn from disjoint source
   splits so `train` / `val` / `test` cannot overlap.
-- **The test set is not touched until Phase 4.** `load_split("test")` raises unless explicitly overridden.
+- **The test set was not touched until Phase 4**, and was then opened exactly once, for both models, with
+  its sha256 re-checked against the Phase 1 manifest before either saw it (D-028). It is now spent.
 - **Prompt development happens on `val` only** — tuning prompts against the test set would contaminate the
   headline number.
 - **Training labels come from the teacher; all evaluation is against dataset gold.** Teacher and student are

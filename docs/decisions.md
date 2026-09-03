@@ -622,3 +622,56 @@ reports a workload where every request conveniently arrives beside others of its
 are exactly what this path lacks, so Phase 5 will lower the cost and raise the throughput, and any
 break-even computed from Phase 4's table would be pessimistic. It is therefore not computed here.
 **Revisit if:** Phase 5's vLLM numbers land, at which point this becomes the before half of a comparison.
+
+---
+
+## D-031 · At equal n the student matches the teacher, and "matches" stays the word
+
+**Date:** 2026-09-03
+**Chose:** Report the student as **statistically indistinguishable** from the teacher — 0.823 against
+0.822 micro-F1 on the same 1,000 test rows, 95% CI on the difference [-0.006, +0.007].
+**Over:** Reading the +0.001 as the student beating its teacher, which is the sentence the resume line
+wants and which the numbers do not support.
+**Why:** Phase 3 could only say "matches" because the two were measured at different n — teacher on 200
+val rows, student on 1,000. That objection is now gone: both were scored on one split, at one n, by one
+metric, for $0.46. What replaced it is a tighter argument for the same conclusion. A paired bootstrap
+over 2,000 resamples puts the student ahead in 60% of draws, which is what a coin flip looks like when
+the coin is slightly bent. The interval spans zero, so the honest claim is parity.
+**Why paired:** resampling rows for both models together cancels the difficulty that both share — the
+same ambiguous multicultural names are hard for either model — instead of counting it as evidence twice.
+Unpaired, the interval would be roughly twice as wide and would say less.
+**What parity is worth:** the student reaches it on a ~60-token prompt against the teacher's ~475 (D-017),
+with 0/1000 schema-invalid, from 7,842 examples the teacher itself generated. That is the distillation
+result. It is not a quality *win*, and the report does not dress it as one.
+**Also settled:** rank 8 against rank 16 came out 0.823 to 0.826 — the ordering reversed from val, and the
+0.003 gap sits inside a 0.005 standard error. D-027's null holds at five times the sample, on rows neither
+adapter had seen. Rank 8 stays deployed, selected on val and on cost; changing it on test evidence would
+spend the sealed set on model selection.
+**Revisit if:** never — this is the measurement the test set existed for, and it has been spent.
+
+---
+
+## D-032 · The cost result is published as the negative it is
+
+**Date:** 2026-09-03
+**Chose:** Report that on this serving stack **there is no break-even volume** — the student costs $0.43
+per 1,000 requests on a saturated T4 against the teacher's $0.44, and more than the API at any realistic
+utilisation — and leave the number standing.
+**Over:** Re-pricing the measured throughput onto a faster card until self-hosting wins, quoting Kaggle's
+free GPU, or reporting only the 100%-utilisation column.
+**Why:** Each of those alternatives produces a better-looking number without a new measurement. The spec
+is explicit that a reported negative result reads as more trustworthy than a suspiciously perfect one,
+and this one is genuinely informative: it says the bottleneck is **not** quality (parity, D-031), **not**
+the model (a 4-bit 8B on a $0.53/hr card), and **not** the prompt (already 4x shorter). It is throughput —
+0.336 req/s, where HF `generate` idles the card between batches and pads every request to the longest in
+its batch.
+**What it buys Phase 5:** a target computed from measurement rather than assumed. vLLM needs 0.67 req/s
+for the student merely to match API pricing at 50% utilisation, and 6.7 req/s for the tenfold advantage
+the project set out to find — 2x and 20x the current throughput. Continuous batching and paged attention
+are exactly the two things this stack lacks, so the gap is the right size to be closeable, and Phase 5
+either closes it or reports that it did not.
+**Cost, stated plainly:** the headline "one-twentieth the cost" resume line is not yet earned and may not
+be. If vLLM lands at 3 req/s rather than 6.7, the honest deliverable is a break-even volume that exists
+but is unattractive, and that is what gets published.
+**Revisit if:** Phase 5's vLLM numbers land — at which point this table becomes the before half of the
+comparison rather than the conclusion.
