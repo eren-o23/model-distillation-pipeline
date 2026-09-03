@@ -1,0 +1,14 @@
+# Phase 5 serving stack — for the rented 24GB GPU box, NOT for the local venv.
+#
+# Same split as requirements-train.txt: this machine stays inference-only and writes reports. torch is
+# deliberately absent again — vLLM pins its own matched CUDA build, and installing one here would fight it.
+#
+# peft/transformers are needed only for the one-time merge in scripts/serve_vllm.sh, not for serving.
+
+vllm>=0.6.0
+transformers>=4.51
+peft>=0.14
+fastapi>=0.115
+uvicorn>=0.32
+openai>=1.0.0
+pydantic>=2.0.0

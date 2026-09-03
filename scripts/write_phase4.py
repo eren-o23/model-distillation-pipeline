@@ -19,6 +19,7 @@ from statistics import median
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.pii import economics  # noqa: E402
 from src.pii.data import SEED, load_split, verify_frozen  # noqa: E402
 from src.pii.metric import Score, bootstrap_delta, normalise, row_counts  # noqa: E402
 
@@ -135,8 +136,13 @@ def pcts(values: list[float]) -> tuple[float, float]:
 
 
 def per_1k(requests_per_s: float, utilisation: float) -> float:
-    """GPU-hour cost amortised over measured throughput, with idle time charged for."""
-    return GPU_RATE_USD_H / (requests_per_s * 3600 * utilisation) * 1000
+    """GPU-hour cost amortised over measured throughput, with idle time charged for.
+
+    The body moved to src/pii/economics.py in Phase 5, unchanged, so both phases amortise through one
+    expression. A Phase 5 that re-derived this would produce a before/after difference that measures
+    the arithmetic rather than the serving stack.
+    """
+    return economics.per_1k(GPU_RATE_USD_H, requests_per_s, utilisation)
 
 
 def main() -> None:

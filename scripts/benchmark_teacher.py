@@ -29,7 +29,11 @@ from src.pii.metric import Score  # noqa: E402
 from src.pii.teacher import Usage, client, extract, is_api_failure, price_for  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW = ROOT / "reports" / "raw" / "phase4"
+# Phase 4 measured the teacher on `test`; Phase 5 needs it on `val`, because the test set is spent
+# (D-028) and the router must be tuned somewhere. Same script, same checkpointing, same cost gate —
+# a second paid script would be a second place to get the retry logic subtly wrong.
+RAW_BY_SPLIT = {"test": ROOT / "reports" / "raw" / "phase4", "val": ROOT / "reports" / "raw" / "phase5"}
+RAW = RAW_BY_SPLIT["test"]
 # Phase 1's ceiling run, kept as the token profile this phase's cost estimate is built from. Measuring
 # 200 real calls beats the chars/4 heuristic: it already knows what this prompt and this model cost.
 CEILING_CHECKPOINT = ROOT / "reports" / "raw" / "qwen3p7-plus-200.json"
@@ -87,7 +91,8 @@ def fetch(cli, model_id: str, rows: list[dict], workers: int) -> list[dict]:
     return [by_uid[r["uid"]] for r in rows]
 
 
-def run(cli, model_id: str, rows: list[dict], workers: int, tag: str, split_sha: str) -> dict:
+def run(cli, model_id: str, rows: list[dict], workers: int, tag: str, split_sha: str,
+        split: str = "test") -> dict:
     """Fetch (or reuse a checkpoint) and persist before scoring. Never re-spends silently."""
     path = RAW / f"{tag}.json"
     if path.exists():
@@ -103,7 +108,7 @@ def run(cli, model_id: str, rows: list[dict], workers: int, tag: str, split_sha:
     payload = {
         "tag": tag,
         "model": model_id,
-        "split": "test",
+        "split": split,
         "split_sha256": split_sha,
         "n": len(records),
         "workers": workers,
@@ -144,21 +149,27 @@ def summarise(payload: dict, rows: list[dict]) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=MODEL)
+    ap.add_argument("--split", default="test", choices=sorted(RAW_BY_SPLIT),
+                    help="test = the Phase 4 benchmark; val = the Phase 5 router's teacher arm")
     ap.add_argument("--limit", type=int, help="cap rows, for the smoke test; omit for the full 1,000")
     ap.add_argument("--workers", type=int, default=WORKERS)
-    ap.add_argument("--serial-n", type=int, default=50, help="rows for the concurrency-1 latency pass")
+    ap.add_argument("--serial-n", type=int, default=50,
+                    help="rows for the concurrency-1 latency pass; 0 skips it")
     ap.add_argument("--yes", action="store_true", help="required to actually spend credits")
     args = ap.parse_args()
 
+    global RAW
+    RAW = RAW_BY_SPLIT[args.split]
+
     # The seal, checked before anything else: this must be the file Phase 1 froze, not one rebuilt since.
-    split_sha = verify_frozen("test")
-    rows = load_split("test", allow_test=True)
-    assert len(rows) == 1000, f"test split is {len(rows)} rows, expected 1000"
-    print(f"test split verified: {len(rows)} rows, sha256 {split_sha[:16]}… matches the manifest")
+    split_sha = verify_frozen(args.split)
+    rows = load_split(args.split, allow_test=args.split == "test")
+    assert len(rows) == 1000, f"{args.split} split is {len(rows)} rows, expected 1000"
+    print(f"{args.split} split verified: {len(rows)} rows, sha256 {split_sha[:16]}… matches the manifest")
 
     # The concurrency-1 pass runs on a seeded subset of the WHOLE split, so the student times itself on
     # identical rows later. Under --limit it is trimmed to what the smoke test actually fetched.
-    serial_rows = latency_sample(rows, args.serial_n)
+    serial_rows = latency_sample(rows, args.serial_n) if args.serial_n else []
     if args.limit:
         rows = rows[: args.limit]
         serial_rows = serial_rows[: min(args.serial_n, args.limit)]
@@ -177,16 +188,21 @@ def main() -> None:
 
     cli = client()
     print(f"\nquality pass — {len(rows)} rows at {args.workers} concurrent …", flush=True)
-    main_run = run(cli, args.model, rows, args.workers, f"teacher-test-{len(rows)}", split_sha)
+    main_run = run(cli, args.model, rows, args.workers, f"teacher-{args.split}-{len(rows)}",
+                   split_sha, args.split)
     summarise(main_run, rows)
 
-    print(f"\nlatency pass — {len(serial_rows)} rows, serial …", flush=True)
-    serial = run(cli, args.model, serial_rows, 1, f"teacher-latency-serial-{len(serial_rows)}", split_sha)
-    lat = sorted(serial["latency_s"])
-    p95 = lat[min(int(0.95 * len(lat)), len(lat) - 1)]
-    print(f"  latency @1 concurrent: p50 {median(lat):.2f}s  p95 {p95:.2f}s", flush=True)
-
-    spent = main_run["cost_usd"] + serial["cost_usd"]
+    # Phase 5 skips this: the teacher's serial latency was already measured in Phase 4 and has not
+    # changed. Re-running it would spend money to reproduce a number already in the report.
+    spent = main_run["cost_usd"]
+    if serial_rows:
+        print(f"\nlatency pass — {len(serial_rows)} rows, serial …", flush=True)
+        serial = run(cli, args.model, serial_rows, 1,
+                     f"teacher-latency-serial-{len(serial_rows)}", split_sha, args.split)
+        lat = sorted(serial["latency_s"])
+        p95 = lat[min(int(0.95 * len(lat)), len(lat) - 1)]
+        print(f"  latency @1 concurrent: p50 {median(lat):.2f}s  p95 {p95:.2f}s", flush=True)
+        spent += serial["cost_usd"]
     print(f"\nspent ${spent:.4f} against a ~${cost:.2f} estimate")
     if spent > cost * 1.5:
         print("  OVERSHOT: a >1.5x overshoot means the teacher is thinking again (D-013) — "
