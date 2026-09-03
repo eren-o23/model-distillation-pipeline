@@ -124,7 +124,7 @@ def run(cli, model_id: str, rows: list[dict], workers: int, tag: str, split_sha:
     }
     RAW.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-    print(f"  checkpointed -> reports/raw/phase4/{path.name}", flush=True)
+    print(f"  checkpointed -> {path.relative_to(ROOT)}", flush=True)
     return payload
 
 

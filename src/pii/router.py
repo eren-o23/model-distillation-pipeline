@@ -20,6 +20,7 @@ warning, just a student that reads as a bad fine-tune. That is D-013's failure m
 cost this project twice. Rendering locally removes the whole class of bug.
 """
 
+import time
 from dataclasses import dataclass
 
 from src.pii.student import SHORT_SYSTEM, render_prompt
@@ -61,6 +62,10 @@ class Completion:
     min_logprob: float
     n_tokens: int
     seconds: float = 0.0
+    # A request that never reached the model. Kept distinct from `entities is None`, which means the
+    # model answered and the answer was unusable. Phase 2 conflated these once and would have published
+    # an 8.6% teacher schema-invalid rate against a real rate of 0% — the same trap, a different server.
+    error: str | None = None
 
     def confidence(self, signal: str = "min") -> float:
         return self.min_logprob if signal == "min" else self.mean_logprob
@@ -77,22 +82,34 @@ def _logprobs(choice) -> list[float]:
     return [v for v in values if v is not None]
 
 
-def complete(cli, model: str, prompt: str, max_tokens: int = MAX_TOKENS) -> Completion:
+def complete(cli, model: str, prompt: str, max_tokens: int = MAX_TOKENS,
+             retries: int = 1) -> Completion:
     """One greedy completion from vLLM, parsed and scored for confidence.
 
     `temperature=0` and the token cap match `src/pii/eval.py` exactly, so a quality number measured
     through here is comparable with every number Phases 3 and 4 produced.
-    """
-    import time
 
+    Never raises. A 1,000-row pass runs on a metered box, and one transport error propagating out of a
+    thread pool would discard 999 completed requests along with the GPU-minutes that bought them. The
+    failure is returned as a `Completion` carrying an `error` instead, so the caller can report it as
+    what it is rather than as a model defect.
+    """
     t0 = time.perf_counter()
-    resp = cli.completions.create(
-        model=model,
-        prompt=prompt,
-        temperature=0,
-        max_tokens=max_tokens,
-        logprobs=1,
-    )
+    for attempt in range(retries + 1):
+        try:
+            resp = cli.completions.create(
+                model=model,
+                prompt=prompt,
+                temperature=0,
+                max_tokens=max_tokens,
+                logprobs=1,
+            )
+            break
+        except Exception as exc:  # noqa: BLE001 - retry once, then record rather than crash the run
+            if attempt == retries:
+                return Completion("", None, float("-inf"), float("-inf"), 0,
+                                  round(time.perf_counter() - t0, 3),
+                                  error=f"{type(exc).__name__}: {str(exc)[:160]}")
     seconds = time.perf_counter() - t0
 
     choice = resp.choices[0]

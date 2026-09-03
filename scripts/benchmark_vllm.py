@@ -35,8 +35,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.pii.data import latency_sample, load_split, verify_frozen  # noqa: E402
 from src.pii.economics import per_1k  # noqa: E402
 from src.pii.metric import Score  # noqa: E402
-from src.pii.router import SHORT_SYSTEM, client, complete, tokenizer  # noqa: E402
-from src.pii.student import render_prompt  # noqa: E402
+from src.pii.router import client, complete, tokenizer  # noqa: E402
+from src.pii.student import SHORT_SYSTEM, render_prompt  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "reports" / "raw" / "phase5"
@@ -65,10 +65,16 @@ def parity(cli, model: str, tok, rows: list[dict], split_sha: str, workers: int)
     comps = run_all(cli, model, prompts, workers)
     seconds = time.perf_counter() - t0
 
+    errors = [(r["uid"], c.error) for r, c in zip(rows, comps, strict=True) if c.error]
     s = Score()
     for row, c in zip(rows, comps, strict=True):
         s.add(row["entities"], c.entities, row["source_text"])
     print(s.table(), flush=True)
+    if errors:
+        # Reported separately from schema-invalid, which counts only answers the model actually
+        # returned malformed. A request that never reached it is not a quality defect.
+        print(f"\n  {len(errors)} of {len(rows)} requests never reached the model — "
+              f"NOT counted as schema-invalid. First: {errors[0][1]}", flush=True)
 
     prior = json.loads(PHASE3_FULL_VAL.read_text())["micro_f1"] if PHASE3_FULL_VAL.exists() else None
     if prior is not None:
@@ -90,12 +96,13 @@ def parity(cli, model: str, tok, rows: list[dict], split_sha: str, workers: int)
         "micro_recall": s.micro.recall,
         "schema_invalid": s.schema_invalid,
         "hallucinated": s.hallucinated,
+        "transport_errors": errors,
         "phase3_micro_f1": prior,
         "uids": [r["uid"] for r in rows],
         # The router sweep's entire student side. Saved per row so every threshold is arithmetic.
         "rows": [
             {"uid": r["uid"], "entities": c.entities, "mean_logprob": c.mean_logprob,
-             "min_logprob": c.min_logprob, "n_tokens": c.n_tokens}
+             "min_logprob": c.min_logprob, "n_tokens": c.n_tokens, "error": c.error}
             for r, c in zip(rows, comps, strict=True)
         ],
     }

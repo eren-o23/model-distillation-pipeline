@@ -42,6 +42,18 @@ TARGET_RATES = (0.0, 0.01, 0.02, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50, 1.0)
 SIGNALS = ("min_logprob", "mean_logprob")
 
 
+def load_one(pattern: str) -> dict | None:
+    """The largest matching measurement, or None.
+
+    Largest by row count, not by filename. The 20-row rehearsal sits in this directory beside the real
+    run and `teacher-val-20.json` sorts *before* `teacher-val-1000.json`, so a lexicographic pick would
+    blend the router against 20 teacher predictions and 1,000 student ones. Phase 4 learned this the
+    same way (042e87d); the fix travels with the lesson.
+    """
+    hits = [json.loads(q.read_text()) for q in RAW.glob(pattern)]
+    return max(hits, key=lambda b: b.get("n", 0)) if hits else None
+
+
 def measure(gold_rows: list[dict], preds: list) -> Score:
     s = Score()
     for row, pred in zip(gold_rows, preds, strict=True):
@@ -71,15 +83,12 @@ def operating_point(gold_rows, student_rows, teacher_preds, escalate, teacher_pe
 
 
 def main() -> None:
-    student_path = next(iter(sorted(RAW.glob("vllm-parity-val-*.json"))), None)
-    teacher_path = next(iter(sorted(RAW.glob("teacher-val-*.json"))), None)
-    if not student_path:
+    student = load_one("vllm-parity-val-*.json")
+    teacher = load_one("teacher-val-*.json")
+    if not student:
         sys.exit("no student parity run — scripts/benchmark_vllm.py --parity has not been run")
-    if not teacher_path:
+    if not teacher:
         sys.exit("no teacher val run — scripts/benchmark_teacher.py --split val --yes has not been run")
-
-    student = json.loads(student_path.read_text())
-    teacher = json.loads(teacher_path.read_text())
 
     split_sha = verify_frozen("val")
     rows = load_split("val")
@@ -88,6 +97,10 @@ def main() -> None:
     for name, blob in (("student", student), ("teacher", teacher)):
         assert blob["split_sha256"] == split_sha, f"{name} was measured against a different val split"
     n = min(student["n"], teacher["n"])
+    if student["n"] != teacher["n"]:
+        # Silently truncating to the shorter run is how a smoke test gets published as a benchmark.
+        print(f"  NOTE: student measured {student['n']} rows, teacher {teacher['n']} — "
+              f"sweeping the first {n} they share. Both should be 1,000 for the real run.")
     rows = rows[:n]
     assert student["uids"][:n] == [r["uid"] for r in rows], "student rows are out of order"
     assert teacher["uids"][:n] == [r["uid"] for r in rows], "teacher rows are out of order"
@@ -97,10 +110,9 @@ def main() -> None:
     teacher_per_request = teacher["cost_usd"] / teacher["n"]
 
     # Throughput at the concurrency that maximises it, matching how Phase 4 picked its cost basis.
-    lat_path = next(iter(sorted(RAW.glob("vllm-latency-*.json"))), None)
+    lat = load_one("vllm-latency-*.json")
     rps = rate = None
-    if lat_path:
-        lat = json.loads(lat_path.read_text())
+    if lat:
         by_c = lat["by_concurrency"]
         best = max(by_c, key=lambda c: by_c[c]["requests_per_s"])
         rps, rate = by_c[best]["requests_per_s"], lat["gpu_rate_usd_h"]

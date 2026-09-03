@@ -1,0 +1,581 @@
+{
+  "tag": "teacher-val-20",
+  "model": "accounts/fireworks/models/qwen3p7-plus",
+  "split": "val",
+  "split_sha256": "23726f2bde210eeae8b081f58b27d3242a58b54b68112dc45c77eb4395d15faa",
+  "n": 20,
+  "workers": 8,
+  "date": "2026-09-03",
+  "uids": [
+    "21041887",
+    "20927989",
+    "21062250",
+    "21062795",
+    "20981845",
+    "21025658",
+    "21042882",
+    "20964781",
+    "20934373",
+    "20955054",
+    "20916728",
+    "21017639",
+    "21105810",
+    "21002383",
+    "21029707",
+    "20951491",
+    "21050159",
+    "20934577",
+    "21075853",
+    "21097380"
+  ],
+  "predictions": [
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Enaya"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Danculea"
+      },
+      {
+        "label": "DATE",
+        "value": "June/59"
+      },
+      {
+        "label": "EMAIL",
+        "value": "1939JK@yahoo.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+72-631459286"
+      },
+      {
+        "label": "STREET",
+        "value": "Chanditala Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Chaksu Amdanga Mauza"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "713362"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "3606540927509996"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Ayse"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Agyemang"
+      },
+      {
+        "label": "DATE",
+        "value": "October 13th, 1960"
+      },
+      {
+        "label": "CITY",
+        "value": "Halifax"
+      },
+      {
+        "label": "EMAIL",
+        "value": "AH@hotmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+68 40-169 8714"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "25/12/1990"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Jaclyn"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Turchany"
+      },
+      {
+        "label": "EMAIL",
+        "value": "VA1951@tutanota.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Visali Naëlla Imsafarne"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Battistoni"
+      },
+      {
+        "label": "DATE",
+        "value": "May/59"
+      },
+      {
+        "label": "STREET",
+        "value": "Farm-to-Market 1147"
+      },
+      {
+        "label": "CITY",
+        "value": "Itasca"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "37074"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Anne-Solène Ras-Work Maey El"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Bahraoui"
+      },
+      {
+        "label": "EMAIL",
+        "value": "9NB@tutanota.com"
+      },
+      {
+        "label": "DATE",
+        "value": "24/11/1960"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "5935803720"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "0057-27.468.6025"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Madhusudhan"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Tse"
+      },
+      {
+        "label": "EMAIL",
+        "value": "GP@hotmail.com"
+      },
+      {
+        "label": "STREET",
+        "value": "Old Sherborne Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Newtonmore"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "PR3 2WH"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Mensud"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Barrocu"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "000.635-6255"
+      },
+      {
+        "label": "EMAIL",
+        "value": "inargüna@protonmail.com"
+      },
+      {
+        "label": "STREET",
+        "value": "Aykar Vihar Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Kadi"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "508101"
+      },
+      {
+        "label": "DATE",
+        "value": "October 13th, 1966"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Zameer Jean-Brice"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Grube"
+      },
+      {
+        "label": "EMAIL",
+        "value": "S@tutanota.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+7041809.8402"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "0742670123"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "9959945243"
+      },
+      {
+        "label": "DATE",
+        "value": "February 4th, 1976"
+      },
+      {
+        "label": "DATE",
+        "value": "1937-10-20T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Nevruz Abdel-Baseir Tankeu"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Osseni"
+      },
+      {
+        "label": "EMAIL",
+        "value": "M05@outlook.com"
+      },
+      {
+        "label": "DATE",
+        "value": "2016-11-25T00:00:00"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Yassine Layann"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Kagame"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Sarune Yaél"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Godwin"
+      },
+      {
+        "label": "DATE",
+        "value": "June/84"
+      },
+      {
+        "label": "DATE",
+        "value": "1954-02-20T00:00:00"
+      },
+      {
+        "label": "CITY",
+        "value": "King City"
+      },
+      {
+        "label": "EMAIL",
+        "value": "badriskandar@tutanota.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+258-85-158 6102"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "1964-09-14T00:00:00"
+      },
+      {
+        "label": "STREET",
+        "value": "Upper South Wraxall"
+      },
+      {
+        "label": "CITY",
+        "value": "Manchester"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "2204518335642339"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "123.271.5915"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "04/11/1949"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Heline Phuangsuwan"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Greif"
+      },
+      {
+        "label": "STREET",
+        "value": "Rue Angers"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "0992714903"
+      },
+      {
+        "label": "EMAIL",
+        "value": "laftcoulo@outlook.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Devi"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Mosakantaro"
+      },
+      {
+        "label": "GIVENNAME",
+        "value": "Jiaming Kabeil Nguiamba Ehrenbogen Baxhuku"
+      },
+      {
+        "label": "DATE",
+        "value": "3rd May 1953"
+      },
+      {
+        "label": "EMAIL",
+        "value": "NRZ@aol.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "069.005.8865"
+      }
+    ],
+    [
+      {
+        "label": "TELEPHONENUM",
+        "value": "+1-46 406-0171"
+      }
+    ],
+    [
+      {
+        "label": "DATE",
+        "value": "June/88"
+      },
+      {
+        "label": "EMAIL",
+        "value": "vichristhok@aol.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Crescenzia"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Zürcher-Wälti"
+      },
+      {
+        "label": "DATE",
+        "value": "1979-06-03T00:00:00"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "67594730046232"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "4597197825"
+      },
+      {
+        "label": "SOCIALNUM",
+        "value": "8581527599"
+      },
+      {
+        "label": "EMAIL",
+        "value": "ADKB@yahoo.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Blagorodna Miljenka"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "6251116981550832"
+      },
+      {
+        "label": "DATE",
+        "value": "7th July 2021"
+      },
+      {
+        "label": "EMAIL",
+        "value": "B1947@protonmail.com"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Dacian Cosmin"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Russi-Melotti"
+      },
+      {
+        "label": "DATE",
+        "value": "04/01/2019"
+      },
+      {
+        "label": "STREET",
+        "value": "Jmroad"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "841503"
+      },
+      {
+        "label": "EMAIL",
+        "value": "S@gmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "06.58.76.09.49"
+      }
+    ],
+    [
+      {
+        "label": "IDCARDNUM",
+        "value": "V3WGWJEDOT"
+      },
+      {
+        "label": "TAXNUM",
+        "value": "77380 92535"
+      },
+      {
+        "label": "STREET",
+        "value": "Canmore Road"
+      },
+      {
+        "label": "CITY",
+        "value": "L'Anse-Saint-Jean"
+      },
+      {
+        "label": "ZIPCODE",
+        "value": "J0X"
+      },
+      {
+        "label": "DATE",
+        "value": "July 15th, 2001"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Marieluisa Armana"
+      },
+      {
+        "label": "SURNAME",
+        "value": "Verbiest"
+      },
+      {
+        "label": "DATE",
+        "value": "September 27th, 1945"
+      },
+      {
+        "label": "STREET",
+        "value": "Temecula Road"
+      },
+      {
+        "label": "CITY",
+        "value": "Cantua Creek"
+      },
+      {
+        "label": "EMAIL",
+        "value": "jayvinvan geenen@protonmail.com"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "+01-429-505.6716"
+      }
+    ],
+    [
+      {
+        "label": "GIVENNAME",
+        "value": "Nirmala"
+      },
+      {
+        "label": "TELEPHONENUM",
+        "value": "001447996.5900"
+      },
+      {
+        "label": "CREDITCARDNUMBER",
+        "value": "377338388132547"
+      }
+    ]
+  ],
+  "latency_s": [
+    1.046,
+    1.009,
+    1.011,
+    1.382,
+    1.166,
+    1.532,
+    1.641,
+    1.006,
+    1.108,
+    0.787,
+    0.573,
+    1.07,
+    0.363,
+    0.378,
+    0.833,
+    0.61,
+    0.885,
+    0.689,
+    0.614,
+    0.575
+  ],
+  "api_failures": [],
+  "usage": {
+    "prompt_tokens": 12563,
+    "completion_tokens": 2728
+  },
+  "cost_usd": 0.00939
+}
